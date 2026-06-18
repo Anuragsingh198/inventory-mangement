@@ -1,0 +1,26 @@
+export const PAGE_DESCRIPTIONS = {
+  dashboard: 'Your inventory command center — track stock, orders, and alerts at a glance.',
+  guide: 'Learn how every module works, which demo role to use, and step-by-step workflows.',
+  listings: 'Browse and manage your product catalog — SKUs, pricing, images, and channel listings.',
+  inventory: 'Monitor stock levels, thresholds, and warehouses. Adjust quantities and track low-stock items.',
+  warehouses: 'View warehouse locations, capacity, and how inventory is distributed across sites.',
+  suppliers: 'Manage vendor contacts, lead times, and purchase relationships for replenishment.',
+  purchases: 'Create and track purchase orders — approve, receive goods, and update on-hand stock.',
+  sales: 'Manage customer sales orders from confirmation through fulfillment and shipping.',
+  orders: 'Track pending, received, and cancelled orders — search, filter, and open order details.',
+  payments: 'Review payment status linked to orders — submitted, completed, and cancelled.',
+  shipments: 'Track outbound shipments and mark pending orders as received when goods arrive.',
+  salesChannels: 'Overview of connected marketplaces — active listings, revenue, and channel status.',
+  reports: 'Export inventory data and review KPIs — stock value, orders, and summary metrics.',
+  notifications: 'Low-stock alerts and system notifications — mark read and configure email delivery.',
+  aiAssistant: 'Ask natural-language questions about stock levels, demand, and expiry batches.',
+  activityLogs: 'Audit trail of user actions across products, orders, and inventory changes.',
+  productDetail: 'Product profile, variants, on-hand stock, and recent movement history.',
+  warehouseDetail: 'Warehouse profile, stock held at this location, and linked inventory items.',
+  supplierDetail: 'Supplier profile, contact details, and related purchase order history.',
+  purchaseOrderDetail: 'Review line items, approve, or receive stock against this purchase order.',
+  salesOrderDetail: 'Customer order details — review items, fulfill, and update inventory.',
+  orderDetail: 'Order summary, line items, notes, exports, and status updates.',
+} as const;
+
+export type PageDescriptionKey = keyof typeof PAGE_DESCRIPTIONS;

@@ -1,31 +1,60 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import String, cast, func
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.deps import get_current_user, require_permission
 from app.database import get_db
-from app.models import Product, ProductVariant, User
+from app.models import Inventory, Product, ProductVariant, User
 from app.schemas import MessageResponse, ProductCreate, ProductResponse, ProductUpdate, ProductVariantCreate, ProductVariantResponse
+from app.schemas.common import PaginatedResponse
 from app.services.audit_service import log_activity
 from app.services.product_service import generate_barcode, generate_sku
+from app.utils.pagination import paginate_query, total_pages
 
 router = APIRouter(prefix="/products", tags=["products"])
 
 
-@router.get("", response_model=list[ProductResponse])
+@router.get("", response_model=PaginatedResponse[ProductResponse])
 def list_products(
     db: Annotated[Session, Depends(get_db)],
     _: Annotated[User, Depends(require_permission("products.read"))],
     search: str | None = Query(default=None),
     category_id: int | None = Query(default=None),
+    sort: Literal["name", "price", "quantity"] = Query(default="name"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=0, le=500),
 ):
     query = db.query(Product).options(joinedload(Product.category))
     if search:
-        query = query.filter(Product.name.ilike(f"%{search}%") | Product.sku.ilike(f"%{search}%"))
+        term = search.strip().lstrip("#")
+        if term:
+            pattern = f"%{term}%"
+            query = query.filter(
+                Product.name.ilike(pattern)
+                | Product.sku.ilike(pattern)
+                | Product.description.ilike(pattern)
+                | cast(Product.id, String).ilike(pattern)
+                | func.lpad(cast(Product.id, String), 6, "0").ilike(pattern)
+            )
     if category_id is not None:
         query = query.filter(Product.category_id == category_id)
-    return query.order_by(Product.name).all()
+    if sort == "price":
+        query = query.order_by(Product.price)
+    elif sort == "quantity":
+        query = query.outerjoin(Inventory).order_by(func.coalesce(Inventory.quantity, 0).desc())
+    else:
+        query = query.order_by(Product.name)
+
+    items, total = paginate_query(query, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size if page_size > 0 else total,
+        pages=total_pages(total, page_size),
+    )
 
 
 @router.get("/generate-sku")

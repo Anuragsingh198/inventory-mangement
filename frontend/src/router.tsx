@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { ActivityLogsPage } from './pages/ActivityLogs';
-import { AIAssistantPage } from './pages/AIAssistant';
+import { GuidePage } from './pages/Guide';
 import { DashboardPage } from './pages/Dashboard';
 import { InventoryPage } from './pages/Inventory';
 import { ListingsPage } from './pages/Listings';
@@ -50,6 +50,7 @@ export function AppRouter() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="guide" element={<GuidePage />} />
         <Route path="listings" element={<ListingsPage />} />
         <Route path="listings/:id" element={<ProductDetailPage />} />
         <Route path="inventory" element={<InventoryPage />} />
@@ -68,7 +69,7 @@ export function AppRouter() {
         <Route path="sales-channels" element={<SalesChannelsPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="ai-assistant" element={<AIAssistantPage />} />
+        <Route path="ai-assistant" element={<Navigate to="/dashboard" replace />} />
         <Route path="activity-logs" element={<ActivityLogsPage />} />
         <Route path="products" element={<Navigate to="/listings" replace />} />
       </Route>

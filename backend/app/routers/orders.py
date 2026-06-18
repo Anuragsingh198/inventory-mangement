@@ -1,33 +1,75 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.deps import require_permission
 from app.database import get_db
-from app.models import Order, OrderItem, OrderStatus, Product, StockMovementType, User
+from app.models import Category, Order, OrderItem, OrderStatus, Product, StockMovementType, User
 from app.schemas import MessageResponse, OrderCreate, OrderResponse, OrderUpdate
+from app.schemas.common import PaginatedResponse
 from app.services.stock_movement_service import StockMovementService
+from app.utils.date_range import parse_end_datetime_exclusive, parse_start_datetime
+from app.utils.pagination import paginate_query, total_pages
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-@router.get("", response_model=list[OrderResponse])
+@router.get("", response_model=PaginatedResponse[OrderResponse])
 def list_orders(
     db: Annotated[Session, Depends(get_db)],
     _: Annotated[User, Depends(require_permission("purchases.read"))],
     status_filter: OrderStatus | None = Query(default=None, alias="status"),
     start_date: str | None = Query(default=None),
     end_date: str | None = Query(default=None),
+    search: str | None = Query(default=None),
+    sort: Literal["newest", "oldest", "customer"] = Query(default="newest"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=0, le=500),
 ):
     query = db.query(Order).options(joinedload(Order.items).joinedload(OrderItem.product).joinedload(Product.category))
     if status_filter:
         query = query.filter(Order.status == status_filter)
     if start_date:
-        query = query.filter(Order.created_at >= start_date)
+        query = query.filter(Order.created_at >= parse_start_datetime(start_date))
     if end_date:
-        query = query.filter(Order.created_at <= end_date)
-    return query.order_by(Order.created_at.desc()).all()
+        query = query.filter(Order.created_at < parse_end_datetime_exclusive(end_date))
+    if search:
+        term = search.strip().lstrip("#")
+        if term:
+            pattern = f"%{term}%"
+            clauses = [
+                Order.supplier.ilike(pattern),
+                cast(Order.status, String).ilike(pattern),
+                cast(Order.id, String).ilike(pattern),
+                func.lpad(cast(Order.id, String), 6, "0").ilike(pattern),
+                Order.notes.ilike(pattern),
+                Product.name.ilike(pattern),
+                Product.sku.ilike(pattern),
+            ]
+            if term.isdigit():
+                clauses.append(Order.id == int(term))
+            query = (
+                query.outerjoin(Order.items)
+                .outerjoin(OrderItem.product)
+                .filter(or_(*clauses))
+                .distinct()
+            )
+    if sort == "oldest":
+        query = query.order_by(Order.created_at.asc())
+    elif sort == "customer":
+        query = query.order_by(Order.supplier)
+    else:
+        query = query.order_by(Order.created_at.desc())
+    items, total = paginate_query(query, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size if page_size > 0 else total,
+        pages=total_pages(total, page_size),
+    )
 
 
 @router.get("/{order_id}", response_model=OrderResponse)

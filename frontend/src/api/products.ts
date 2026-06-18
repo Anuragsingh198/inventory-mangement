@@ -1,11 +1,25 @@
-import type { Category, Product, ProductCreate } from '../types';
+import type { Category, Paginated, Product, ProductCreate } from '../types';
+import { PAGE_SIZE } from '../lib/utils';
 import { apiClient } from './client';
 
-export async function getProducts(search?: string, categoryId?: number): Promise<Product[]> {
-  const params: Record<string, string | number> = {};
+export type ProductSort = 'name' | 'price' | 'quantity';
+
+export async function getProducts(
+  search?: string,
+  categoryId?: number,
+  sort: ProductSort = 'name',
+  page = 1,
+  pageSize = PAGE_SIZE,
+  all = false,
+): Promise<Paginated<Product>> {
+  const params: Record<string, string | number> = {
+    sort,
+    page,
+    page_size: all ? 0 : pageSize,
+  };
   if (search) params.search = search;
   if (categoryId) params.category_id = categoryId;
-  const { data } = await apiClient.get<Product[]>('/products', { params });
+  const { data } = await apiClient.get<Paginated<Product>>('/products', { params });
   return data;
 }
 

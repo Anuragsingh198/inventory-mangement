@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated, Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.deps import require_permission
@@ -14,7 +17,9 @@ from app.schemas import (
     SalesOrderResponse,
     SalesOrderUpdate,
 )
+from app.schemas.common import PaginatedResponse
 from app.services.order_service import SalesService
+from app.utils.pagination import paginate_query, total_pages
 
 router = APIRouter(prefix="/sales", tags=["sales"])
 
@@ -54,13 +59,46 @@ def update_customer(customer_id: int, payload: CustomerUpdate, db: Session = Dep
     return c
 
 
-@router.get("/orders", response_model=list[SalesOrderResponse])
-def list_sales_orders(db: Session = Depends(get_db), _: User = Depends(require_permission("sales.read"))):
-    return (
-        db.query(SalesOrder)
-        .options(joinedload(SalesOrder.items), joinedload(SalesOrder.customer))
-        .order_by(SalesOrder.created_at.desc())
-        .all()
+@router.get("/orders", response_model=PaginatedResponse[SalesOrderResponse])
+def list_sales_orders(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_permission("sales.read"))],
+    search: str | None = Query(default=None),
+    sort: Literal["newest", "oldest", "customer"] = Query(default="newest"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=0, le=500),
+):
+    query = db.query(SalesOrder).options(joinedload(SalesOrder.items), joinedload(SalesOrder.customer))
+    joined_customer = False
+    if search:
+        term = search.strip().lstrip("#")
+        if term:
+            pattern = f"%{term}%"
+            query = query.join(SalesOrder.customer).filter(
+                or_(
+                    cast(SalesOrder.id, String).ilike(pattern),
+                    func.lpad(cast(SalesOrder.id, String), 6, "0").ilike(pattern),
+                    Customer.name.ilike(pattern),
+                    cast(SalesOrder.status, String).ilike(pattern),
+                )
+            )
+            joined_customer = True
+    if sort == "customer" and not joined_customer:
+        query = query.join(SalesOrder.customer)
+    if sort == "oldest":
+        query = query.order_by(SalesOrder.created_at.asc())
+    elif sort == "customer":
+        query = query.order_by(Customer.name)
+    else:
+        query = query.order_by(SalesOrder.created_at.desc())
+
+    items, total = paginate_query(query, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size if page_size > 0 else total,
+        pages=total_pages(total, page_size),
     )
 
 

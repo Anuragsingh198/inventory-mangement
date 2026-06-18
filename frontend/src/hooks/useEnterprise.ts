@@ -1,4 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../context/ToastContext';
+import { getApiErrorMessage } from '../lib/apiError';
+import { PAGE_SIZE } from '../lib/utils';
+import type { ListQueryOptions } from '../types';
 import {
   approvePurchaseOrder,
   askAI,
@@ -22,10 +26,21 @@ import {
   getWarehouseLocations,
   getWarehouses,
   receivePurchaseOrder,
+  type PurchaseOrderSort,
+  type SalesOrderSort,
+  type SupplierSort,
+  type WarehouseSort,
 } from '../api/enterprise';
 
-export function useSuppliers() {
-  return useQuery({ queryKey: ['suppliers'], queryFn: getSuppliers });
+export function useSuppliers(search?: string, sort: SupplierSort = 'name', options: ListQueryOptions = {}) {
+  const page = options.page ?? 1;
+  const pageSize = options.all ? 0 : (options.pageSize ?? PAGE_SIZE);
+
+  return useQuery({
+    queryKey: ['suppliers', search, sort, options.all ? 'all' : page, pageSize],
+    queryFn: () => getSuppliers(search, sort, page, pageSize, options.all),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useSupplier(id: number) {
@@ -40,8 +55,15 @@ export function useSupplierPayments(supplierId: number) {
   });
 }
 
-export function useWarehouses() {
-  return useQuery({ queryKey: ['warehouses'], queryFn: getWarehouses });
+export function useWarehouses(search?: string, sort: WarehouseSort = 'name', options: ListQueryOptions = {}) {
+  const page = options.page ?? 1;
+  const pageSize = options.all ? 0 : (options.pageSize ?? PAGE_SIZE);
+
+  return useQuery({
+    queryKey: ['warehouses', search, sort, options.all ? 'all' : page, pageSize],
+    queryFn: () => getWarehouses(search, sort, page, pageSize, options.all),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useWarehouse(id: number) {
@@ -56,16 +78,30 @@ export function useWarehouseLocations(warehouseId: number) {
   });
 }
 
-export function usePurchaseOrders() {
-  return useQuery({ queryKey: ['purchase-orders'], queryFn: getPurchaseOrders });
+export function usePurchaseOrders(search?: string, sort: PurchaseOrderSort = 'newest', options: ListQueryOptions = {}) {
+  const page = options.page ?? 1;
+  const pageSize = options.all ? 0 : (options.pageSize ?? PAGE_SIZE);
+
+  return useQuery({
+    queryKey: ['purchase-orders', search, sort, options.all ? 'all' : page, pageSize],
+    queryFn: () => getPurchaseOrders(search, sort, page, pageSize, options.all),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function usePurchaseOrder(id: number) {
   return useQuery({ queryKey: ['purchase-orders', id], queryFn: () => getPurchaseOrder(id), enabled: id > 0 });
 }
 
-export function useSalesOrders() {
-  return useQuery({ queryKey: ['sales-orders'], queryFn: getSalesOrders });
+export function useSalesOrders(search?: string, sort: SalesOrderSort = 'newest', options: ListQueryOptions = {}) {
+  const page = options.page ?? 1;
+  const pageSize = options.all ? 0 : (options.pageSize ?? PAGE_SIZE);
+
+  return useQuery({
+    queryKey: ['sales-orders', search, sort, options.all ? 'all' : page, pageSize],
+    queryFn: () => getSalesOrders(search, sort, page, pageSize, options.all),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useSalesOrder(id: number) {
@@ -102,16 +138,23 @@ export function useForecasts() {
 
 export function useEnterpriseMutations() {
   const qc = useQueryClient();
+  const { showToast } = useToast();
   const invalidate = (...keys: string[]) => keys.forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+
+  const onActionError = (fallback: string) => (error: unknown) => {
+    showToast(getApiErrorMessage(error, fallback), 'error');
+  };
 
   return {
     createSupplier: useMutation({
       mutationFn: createSupplier,
       onSuccess: () => invalidate('suppliers'),
+      onError: onActionError('Failed to create supplier'),
     }),
     createWarehouse: useMutation({
       mutationFn: createWarehouse,
       onSuccess: () => invalidate('warehouses'),
+      onError: onActionError('Failed to create warehouse'),
     }),
     approvePO: useMutation({
       mutationFn: approvePurchaseOrder,
@@ -119,7 +162,9 @@ export function useEnterpriseMutations() {
         invalidate('purchase-orders');
         qc.invalidateQueries({ queryKey: ['purchase-orders', id] });
         invalidate('inventory');
+        showToast('Purchase order approved', 'success');
       },
+      onError: onActionError('Failed to approve purchase order'),
     }),
     receivePO: useMutation({
       mutationFn: receivePurchaseOrder,
@@ -127,7 +172,9 @@ export function useEnterpriseMutations() {
         invalidate('purchase-orders');
         qc.invalidateQueries({ queryKey: ['purchase-orders', id] });
         invalidate('inventory');
+        showToast('Stock received into inventory', 'success');
       },
+      onError: onActionError('Failed to receive purchase order'),
     }),
     fulfillSO: useMutation({
       mutationFn: fulfillSalesOrder,
@@ -135,7 +182,9 @@ export function useEnterpriseMutations() {
         invalidate('sales-orders');
         qc.invalidateQueries({ queryKey: ['sales-orders', id] });
         invalidate('inventory');
+        showToast('Sales order fulfilled', 'success');
       },
+      onError: onActionError('Failed to fulfill sales order'),
     }),
     askAI: useMutation({ mutationFn: askAI }),
   };

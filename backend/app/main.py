@@ -11,6 +11,7 @@ from app.routers import (
     categories,
     import_export,
     inventory,
+    notifications,
     orders,
     products,
     purchases,
@@ -37,6 +38,7 @@ app.include_router(inventory.router)
 app.include_router(orders.router)
 app.include_router(reports.router)
 app.include_router(alerts.router)
+app.include_router(notifications.router)
 app.include_router(warehouses.router)
 app.include_router(suppliers.router)
 app.include_router(purchases.router)

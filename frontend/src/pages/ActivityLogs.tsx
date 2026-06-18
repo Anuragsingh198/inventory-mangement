@@ -1,18 +1,21 @@
 import { ErrorState, LoadingSkeleton, PageCard, PageHeader, Pagination, Table } from '../components';
 import { useActivityLogs } from '../hooks/useEnterprise';
 import { usePagination } from '../hooks/usePagination';
-import { formatDate, PAGE_SIZE } from '../lib/utils';
+import { usePageSize } from '../context/PageSizeContext';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
+import { formatDate } from '../lib/utils';
 
 export function ActivityLogsPage() {
   const { data, isLoading, error } = useActivityLogs();
-  const { page, pages, paged, setPage, total } = usePagination(data ?? [], 'activity-logs');
+  const { pageSize } = usePageSize();
+  const { page, pages, paged, setPage, total } = usePagination(data ?? [], 'activity-logs', pageSize);
 
   if (isLoading) return <LoadingSkeleton />;
   if (error) return <ErrorState message="Failed to load activity logs" />;
 
   return (
     <div>
-      <PageHeader title="Activity Logs" />
+      <PageHeader title="Activity Logs" description={PAGE_DESCRIPTIONS.activityLogs} />
       <PageCard>
         <Table headers={['Action', 'Entity', 'User', 'Time']}>
           {paged.map((log) => (
@@ -24,7 +27,7 @@ export function ActivityLogsPage() {
             </tr>
           ))}
         </Table>
-        <Pagination page={page} total={pages} onChange={setPage} totalItems={total} perPage={PAGE_SIZE} />
+        <Pagination page={page} total={pages} onChange={setPage} totalItems={total} />
       </PageCard>
     </div>
   );

@@ -1,4 +1,5 @@
-import type { InventoryAdjust, InventoryItem } from '../types';
+import type { InventoryAdjust, InventoryItem, Paginated } from '../types';
+import { PAGE_SIZE } from '../lib/utils';
 import { apiClient } from './client';
 
 export interface InventoryCreate {
@@ -8,8 +9,22 @@ export interface InventoryCreate {
   location?: string;
 }
 
-export async function getInventory(): Promise<InventoryItem[]> {
-  const { data } = await apiClient.get<InventoryItem[]>('/inventory');
+export type InventorySort = 'id' | 'name' | 'sku' | 'quantity' | 'location';
+
+export async function getInventory(
+  search?: string,
+  page = 1,
+  pageSize = PAGE_SIZE,
+  all = false,
+  sort: InventorySort = 'id',
+): Promise<Paginated<InventoryItem>> {
+  const params: Record<string, string | number> = {
+    page,
+    page_size: all ? 0 : pageSize,
+    sort,
+  };
+  if (search) params.search = search;
+  const { data } = await apiClient.get<Paginated<InventoryItem>>('/inventory', { params });
   return data;
 }
 

@@ -12,6 +12,20 @@ export type PurchaseOrderStatus = 'draft' | 'pending_approval' | 'approved' | 'p
 export type SalesOrderStatus = 'draft' | 'confirmed' | 'fulfilled' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
 export type AlertType = 'low_stock' | 'out_of_stock' | 'near_expiry' | 'critical_stock' | 'reorder';
 
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface ListQueryOptions {
+  page?: number;
+  pageSize?: number;
+  all?: boolean;
+}
+
 export interface User {
   id: number;
   email?: string;
@@ -236,4 +250,39 @@ export const WRITE_ROLES: UserRole[] = ['super_admin', 'admin', 'inventory_manag
 
 export function canWrite(role?: UserRole): boolean {
   return !!role && WRITE_ROLES.includes(role);
+}
+
+const PO_APPROVE_ROLES: UserRole[] = ['super_admin', 'admin', 'inventory_manager'];
+const PO_RECEIVE_ROLES: UserRole[] = ['super_admin', 'admin', 'inventory_manager', 'warehouse_staff'];
+const SO_FULFILL_ROLES: UserRole[] = ['super_admin', 'admin', 'warehouse_staff', 'sales_executive'];
+
+export function canApprovePO(role?: UserRole): boolean {
+  return !!role && PO_APPROVE_ROLES.includes(role);
+}
+
+export function canReceivePO(role?: UserRole): boolean {
+  return !!role && PO_RECEIVE_ROLES.includes(role);
+}
+
+export function canFulfillSO(role?: UserRole): boolean {
+  return !!role && SO_FULFILL_ROLES.includes(role);
+}
+
+export function purchaseOrderHasPendingReceipt(po: PurchaseOrder): boolean {
+  return po.items.some((line) => line.received_quantity < line.quantity);
+}
+
+export function canReceivePurchaseOrder(po: PurchaseOrder): boolean {
+  return (
+    (po.status === 'approved' || po.status === 'partially_received') &&
+    purchaseOrderHasPendingReceipt(po)
+  );
+}
+
+export function canApprovePurchaseOrder(po: PurchaseOrder): boolean {
+  return po.status === 'pending_approval' || po.status === 'draft';
+}
+
+export function canFulfillSalesOrder(so: SalesOrder): boolean {
+  return so.status === 'confirmed' && so.items.some((line) => line.fulfilled_quantity < line.quantity);
 }

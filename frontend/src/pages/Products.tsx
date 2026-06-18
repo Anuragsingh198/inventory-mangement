@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { Badge, ErrorState, LoadingSkeleton, Modal, Table } from '../components';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Badge, ErrorState, FilterSelect, LoadingSkeleton, Modal, Pagination, SearchInput, Table, TableArea } from '../components';
 import { useAuth } from '../context/AuthContext';
+import { usePageSize } from '../context/PageSizeContext';
 import { useToast } from '../context/ToastContext';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useCategories, useProductMutations, useProducts } from '../hooks/useProducts';
+import { useResetPageOnFilterChange } from '../hooks/useResetPageOnFilterChange';
 import type { Product, ProductCreate } from '../types';
 
 const emptyForm: ProductCreate = {
@@ -20,14 +23,25 @@ export function ProductsPage() {
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>();
+  const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductCreate>(emptyForm);
 
-  const { data: products, isLoading, error } = useProducts(search || undefined, categoryFilter);
+  const { pageSize } = usePageSize();
+  const debouncedSearch = useDebouncedValue(search.trim(), 300) || undefined;
+  useResetPageOnFilterChange(setPage, [debouncedSearch, categoryFilter, pageSize]);
+
+  const { data, isLoading, isFetching, error } = useProducts(debouncedSearch, categoryFilter, 'name', { page, pageSize });
   const { data: categories } = useCategories();
   const { create, update, remove } = useProductMutations();
+
+  const products = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const pages = data?.pages ?? 1;
+  const showTableSkeleton = isLoading && !data;
+  const tableLoading = isFetching && !showTableSkeleton;
 
   const openCreate = () => {
     setEditing(null);
@@ -74,8 +88,7 @@ export function ProductsPage() {
     }
   };
 
-  if (isLoading) return <LoadingSkeleton />;
-  if (error) return <ErrorState message="Failed to load products" />;
+  if (error && !data) return <ErrorState message="Failed to load products" />;
 
   return (
     <div className="space-y-6">
@@ -91,30 +104,29 @@ export function ProductsPage() {
         )}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or SKU..."
-            className="w-full rounded-lg border border-gray-200 bg-white"
-          />
-        </div>
-        <select
-          value={categoryFilter ?? ''}
-          onChange={(e) => setCategoryFilter(e.target.value ? Number(e.target.value) : undefined)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2"
-        >
-          <option value="">All Categories</option>
-          {categories?.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SearchInput
+          label="Search products"
+          value={search}
+          onChange={setSearch}
+          placeholder="ID, name, SKU, or description..."
+        />
+        <FilterSelect
+          label="Category"
+          value={categoryFilter ? String(categoryFilter) : ''}
+          onChange={(value) => setCategoryFilter(value ? Number(value) : undefined)}
+          placeholder="All categories"
+          options={categories?.map((c) => ({ value: String(c.id), label: c.name })) ?? []}
+        />
       </div>
 
+      <TableArea loading={tableLoading}>
+        {showTableSkeleton ? (
+          <LoadingSkeleton rows={6} />
+        ) : (
+          <>
       <Table headers={['Name', 'SKU', 'Category', 'Price', 'Actions']}>
-        {products?.map((product) => (
+        {products.map((product) => (
           <tr key={product.id}>
             <td className="px-4 py-3 text-sm font-medium">{product.name}</td>
             <td className="px-4 py-3">
@@ -139,6 +151,15 @@ export function ProductsPage() {
           </tr>
         ))}
       </Table>
+      <Pagination
+        page={page}
+        total={pages}
+        onChange={setPage}
+        totalItems={total}
+      />
+          </>
+        )}
+      </TableArea>
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Product' : 'Add Product'} size="lg">
         <div className="grid gap-4 sm:grid-cols-2">

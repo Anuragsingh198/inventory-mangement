@@ -14,7 +14,8 @@ interface CreateOrderModalProps {
 
 export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModalProps) {
   const { showToast } = useToast();
-  const { data: products } = useProducts();
+  const { data: productsData } = useProducts(undefined, undefined, 'name', { all: true });
+  const products = productsData?.items;
   const { create } = useOrderMutations();
   const [supplier, setSupplier] = useState('');
   const [notes, setNotes] = useState('');
@@ -110,7 +111,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: CreateOrderModa
       </div>
       <div className="mt-6 flex justify-end gap-3">
         <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-sm">Cancel</button>
-        <PrimaryButton onClick={handleCreate}>Create</PrimaryButton>
+        <PrimaryButton loading={create.isPending} onClick={handleCreate}>Create</PrimaryButton>
       </div>
     </Modal>
   );

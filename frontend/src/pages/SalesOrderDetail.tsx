@@ -1,24 +1,26 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Badge,
   ErrorState,
   LoadingSkeleton,
+  HeaderButton,
   OutlineButton,
   PageCard,
-  PrimaryButton,
+  PageHeader,
   Table,
 } from '../components';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
 import { useEnterpriseMutations, useSalesOrder } from '../hooks/useEnterprise';
+import { canFulfillSO, canFulfillSalesOrder } from '../types';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
 import { formatCurrency, formatDate, formatOrderId } from '../lib/utils';
 
 export function SalesOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const soId = Number(id);
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
-  const { showToast } = useToast();
+  const { user } = useAuth();
+  const role = user?.role;
   const { data: order, isLoading, error } = useSalesOrder(soId);
   const { fulfillSO } = useEnterpriseMutations();
 
@@ -27,30 +29,27 @@ export function SalesOrderDetailPage() {
 
   const total = order.items.reduce((sum, line) => sum + line.quantity * Number(line.unit_price), 0);
   const statusVariant = order.status === 'fulfilled' || order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'danger' : 'warning';
-
-  const handleFulfill = async () => {
-    try {
-      await fulfillSO.mutateAsync(soId);
-      showToast('Order fulfilled', 'success');
-    } catch {
-      showToast('Failed to fulfill order', 'error');
-    }
-  };
+  const showFulfill = canFulfillSO(role) && canFulfillSalesOrder(order);
 
   return (
     <div>
-      <Link to="/sales" className="text-sm text-brand hover:underline">← Back to Sales Orders</Link>
-      <PageCard>
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold">SO #{formatOrderId(order.id)}</h1>
+      <PageHeader
+        title={`SO #${formatOrderId(order.id)}`}
+        description={PAGE_DESCRIPTIONS.salesOrderDetail}
+        showDate={false}
+        backTo={{ label: 'Back to Sales Orders', path: '/sales' }}
+        action={
+          <>
             <Badge variant={statusVariant}>{order.status}</Badge>
-          </div>
-          {isAdmin && order.status === 'confirmed' && (
-            <PrimaryButton onClick={handleFulfill}>Fulfill Order</PrimaryButton>
-          )}
-        </div>
-
+            {showFulfill && (
+              <HeaderButton loading={fulfillSO.isPending} onClick={() => fulfillSO.mutate(soId)}>
+                Fulfill Order
+              </HeaderButton>
+            )}
+          </>
+        }
+      />
+      <PageCard>
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-xs text-gray-400">Customer</p>

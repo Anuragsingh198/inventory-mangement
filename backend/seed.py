@@ -103,20 +103,29 @@ DEMO_USERS = [
 
 def _seed_users(db):
     created = 0
+    updated = 0
     for email, password, role, full_name in DEMO_USERS:
         existing = db.query(User).filter(User.email == email).first()
         if existing:
+            existing.hashed_password = get_password_hash(password)
+            existing.role = role
+            existing.full_name = full_name
+            existing.is_active = True
+            updated += 1
             continue
         db.add(User(
             email=email,
             hashed_password=get_password_hash(password),
             role=role,
             full_name=full_name,
+            is_active=True,
         ))
         created += 1
     if created:
-        db.flush()
         print(f"Created {created} demo user(s)")
+    if updated:
+        print(f"Reset {updated} demo user password(s)")
+    db.flush()
     admin = db.query(User).filter(User.email == "admin@inventory.com").first()
     return admin or db.query(User).first()
 
@@ -284,6 +293,7 @@ def _seed_legacy_orders(db, products):
 
 def _seed_purchase_orders(db, suppliers, products, main_wh, admin):
     if db.query(PurchaseOrder).count() > 0:
+        _refresh_demo_purchase_orders(db, suppliers, products, main_wh, admin)
         return
     statuses = [
         PurchaseOrderStatus.PENDING_APPROVAL,
@@ -310,6 +320,30 @@ def _seed_purchase_orders(db, suppliers, products, main_wh, admin):
     print("Created purchase orders")
 
 
+def _refresh_demo_purchase_orders(db, suppliers, products, main_wh, admin):
+    """Keep at least one approvable and one receivable PO for demo workflows."""
+    target_states = [
+        PurchaseOrderStatus.PENDING_APPROVAL,
+        PurchaseOrderStatus.APPROVED,
+        PurchaseOrderStatus.PARTIALLY_RECEIVED,
+    ]
+    pos = db.query(PurchaseOrder).order_by(PurchaseOrder.id).all()
+    for i, status in enumerate(target_states):
+        if i >= len(pos):
+            break
+        po = pos[i]
+        po.status = status
+        po.warehouse_id = main_wh.id
+        po.approved_at = NOW() if status != PurchaseOrderStatus.PENDING_APPROVAL else None
+        po.received_at = None
+        for line in po.items:
+            if status == PurchaseOrderStatus.PARTIALLY_RECEIVED:
+                line.received_quantity = max(0, line.quantity // 2)
+            else:
+                line.received_quantity = 0
+    print("Refreshed demo purchase order statuses")
+
+
 def _seed_vendor_invoices(db, suppliers):
     if db.query(VendorInvoice).count() > 0:
         return
@@ -327,6 +361,7 @@ def _seed_vendor_invoices(db, suppliers):
 
 def _seed_sales_orders(db, customers, products, main_wh, admin):
     if db.query(SalesOrder).count() > 0:
+        _refresh_demo_sales_orders(db, main_wh)
         return
     statuses = [SalesOrderStatus.CONFIRMED, SalesOrderStatus.FULFILLED, SalesOrderStatus.DRAFT, SalesOrderStatus.SHIPPED, SalesOrderStatus.DELIVERED]
     for i, status in enumerate(statuses):
@@ -343,6 +378,19 @@ def _seed_sales_orders(db, customers, products, main_wh, admin):
             fulfilled = qty if status != SalesOrderStatus.DRAFT else 0
             db.add(SalesOrderLine(sales_order_id=so.id, product_id=p.id, quantity=qty, fulfilled_quantity=fulfilled, unit_price=p.price))
     print("Created sales orders")
+
+
+def _refresh_demo_sales_orders(db, main_wh):
+    """Ensure at least one confirmed sales order is available to fulfill in demos."""
+    so = db.query(SalesOrder).order_by(SalesOrder.id).first()
+    if not so:
+        return
+    so.status = SalesOrderStatus.CONFIRMED
+    so.warehouse_id = main_wh.id
+    so.fulfilled_at = None
+    for line in so.items:
+        line.fulfilled_quantity = 0
+    print("Refreshed demo sales order statuses")
 
 
 def _seed_customer_invoices(db, customers):

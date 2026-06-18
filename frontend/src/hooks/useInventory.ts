@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   adjustInventory,
   createInventory,
@@ -7,13 +7,23 @@ import {
   getLowStock,
   updateInventory,
   type InventoryCreate,
+  type InventorySort,
 } from '../api/inventory';
-import type { InventoryAdjust } from '../types';
+import { PAGE_SIZE } from '../lib/utils';
+import type { InventoryAdjust, ListQueryOptions } from '../types';
 
-export function useInventory() {
+export function useInventory(
+  search?: string,
+  options: ListQueryOptions & { sort?: InventorySort } = {},
+) {
+  const page = options.page ?? 1;
+  const pageSize = options.all ? 0 : (options.pageSize ?? PAGE_SIZE);
+  const sort = options.sort ?? 'id';
+
   return useQuery({
-    queryKey: ['inventory'],
-    queryFn: getInventory,
+    queryKey: ['inventory', search, options.all ? 'all' : page, pageSize, sort],
+    queryFn: () => getInventory(search, page, pageSize, options.all, sort),
+    placeholderData: keepPreviousData,
   });
 }
 

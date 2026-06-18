@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { PageSizeProvider } from './context/PageSizeContext';
 import { ToastProvider } from './context/ToastContext';
 import { AppRouter } from './router';
 import './index.css';
@@ -25,9 +26,11 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <ToastProvider>
-            <AppRouter />
-          </ToastProvider>
+          <PageSizeProvider>
+            <ToastProvider>
+              <AppRouter />
+            </ToastProvider>
+          </PageSizeProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

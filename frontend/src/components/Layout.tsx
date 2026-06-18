@@ -18,7 +18,9 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { ChatbotProvider } from '../context/ChatbotContext';
 import { useAlerts } from '../hooks/useAlerts';
+import { FloatingChatbot } from './FloatingChatbot';
 
 const navItems: {
   to: string;
@@ -32,8 +34,8 @@ const navItems: {
     icon: LayoutDashboard,
     children: [
       { to: '/dashboard', label: 'Overview' },
+      { to: '/guide', label: 'Platform Guide' },
       { to: '/reports', label: 'Reports' },
-      { to: '/ai-assistant', label: 'AI Assistant' },
     ],
   },
   { to: '/listings', label: 'Listings', icon: List },
@@ -86,7 +88,7 @@ export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
   const [profileOpen, setProfileOpen] = useState(false);
-  const [expandedNav, setExpandedNav] = useState<string | null>('/dashboard');
+  const [expandedNav, setExpandedNav] = useState<string[]>([]);
 
   const unreadCount = alerts?.length ?? 0;
   const displayName = user?.email?.split('@')[0] ?? user?.full_name ?? 'User';
@@ -99,18 +101,22 @@ export function Layout() {
     return children?.some((c) => isActive(c.to)) ?? false;
   };
 
+  const isNavExpanded = (to: string) => expandedNav.includes(to);
+
+  const toggleNavSection = (to: string) => {
+    setExpandedNav((current) =>
+      current.includes(to) ? current.filter((section) => section !== to) : [...current, to],
+    );
+  };
+
   useEffect(() => setSidebarOpen(false), [location.pathname]);
 
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', String(collapsed));
   }, [collapsed]);
 
-  useEffect(() => {
-    const match = navItems.find((item) => isSectionActive(item.to, item.children));
-    if (match?.children) setExpandedNav(match.to);
-  }, [location.pathname]);
-
   return (
+    <ChatbotProvider>
     <div className="flex h-screen overflow-hidden bg-surface">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -155,7 +161,6 @@ export function Layout() {
                   <Link
                     to={to}
                     title={collapsed ? label : undefined}
-                    onClick={() => children && setExpandedNav(expandedNav === to ? null : to)}
                     className={`flex flex-1 items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                       sectionActive
                         ? 'bg-white/15 text-white'
@@ -168,15 +173,17 @@ export function Layout() {
                   {hasChildren && (
                     <button
                       type="button"
-                      onClick={() => setExpandedNav(expandedNav === to ? null : to)}
-                      className="mr-1 rounded p-1 text-white/60 hover:text-white"
+                      onClick={() => toggleNavSection(to)}
+                      aria-expanded={isNavExpanded(to)}
+                      aria-label={`${isNavExpanded(to) ? 'Collapse' : 'Expand'} ${label} menu`}
+                      className="mr-1 rounded p-1 text-white/60 hover:bg-white/10 hover:text-white"
                     >
-                      <ChevronDown className={`h-4 w-4 transition-transform ${expandedNav === to ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isNavExpanded(to) ? 'rotate-180' : ''}`} />
                     </button>
                   )}
                 </div>
 
-                {hasChildren && expandedNav === to && (
+                {hasChildren && isNavExpanded(to) && (
                   <div className="ml-4 mt-0.5 space-y-0.5 border-l border-white/15 pl-3">
                     {children.map((child) => (
                       <Link
@@ -278,6 +285,9 @@ export function Layout() {
           <span>Version: 1.0</span>
         </footer>
       </div>
+
+      <FloatingChatbot />
     </div>
+    </ChatbotProvider>
   );
 }

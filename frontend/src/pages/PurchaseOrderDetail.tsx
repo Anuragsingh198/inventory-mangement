@@ -1,24 +1,31 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Badge,
   ErrorState,
   LoadingSkeleton,
+  HeaderButton,
   OutlineButton,
   PageCard,
-  PrimaryButton,
+  PageHeader,
   Table,
 } from '../components';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
 import { useEnterpriseMutations, usePurchaseOrder } from '../hooks/useEnterprise';
+import {
+  canApprovePO,
+  canApprovePurchaseOrder,
+  canReceivePO,
+  canReceivePurchaseOrder,
+} from '../types';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
 import { formatCurrency, formatDate, formatOrderId } from '../lib/utils';
 
 export function PurchaseOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const poId = Number(id);
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
-  const { showToast } = useToast();
+  const { user } = useAuth();
+  const role = user?.role;
   const { data: po, isLoading, error } = usePurchaseOrder(poId);
   const { approvePO, receivePO } = useEnterpriseMutations();
 
@@ -27,44 +34,33 @@ export function PurchaseOrderDetailPage() {
 
   const total = po.items.reduce((sum, line) => sum + line.quantity * Number(line.unit_price), 0);
   const statusVariant = po.status === 'received' ? 'success' : po.status === 'cancelled' ? 'danger' : 'warning';
-
-  const handleApprove = async () => {
-    try {
-      await approvePO.mutateAsync(poId);
-      showToast('Purchase order approved', 'success');
-    } catch {
-      showToast('Failed to approve', 'error');
-    }
-  };
-
-  const handleReceive = async () => {
-    try {
-      await receivePO.mutateAsync(poId);
-      showToast('Inventory received', 'success');
-    } catch {
-      showToast('Failed to receive', 'error');
-    }
-  };
+  const showApprove = canApprovePO(role) && canApprovePurchaseOrder(po);
+  const showReceive = canReceivePO(role) && canReceivePurchaseOrder(po);
 
   return (
     <div>
-      <Link to="/purchases" className="text-sm text-brand hover:underline">← Back to Purchase Orders</Link>
-      <PageCard>
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold">PO #{formatOrderId(po.id)}</h1>
+      <PageHeader
+        title={`PO #${formatOrderId(po.id)}`}
+        description={PAGE_DESCRIPTIONS.purchaseOrderDetail}
+        showDate={false}
+        backTo={{ label: 'Back to Purchase Orders', path: '/purchases' }}
+        action={
+          <>
             <Badge variant={statusVariant}>{po.status.replace(/_/g, ' ')}</Badge>
-          </div>
-          {isAdmin && (
-            <div className="flex gap-2">
-              {po.status === 'pending_approval' && <PrimaryButton onClick={handleApprove}>Approve</PrimaryButton>}
-              {(po.status === 'approved' || po.status === 'partially_received') && (
-                <PrimaryButton onClick={handleReceive}>Receive Stock</PrimaryButton>
-              )}
-            </div>
-          )}
-        </div>
-
+            {showApprove && (
+              <HeaderButton loading={approvePO.isPending} disabled={receivePO.isPending} onClick={() => approvePO.mutate(poId)}>
+                Approve
+              </HeaderButton>
+            )}
+            {showReceive && (
+              <HeaderButton loading={receivePO.isPending} disabled={approvePO.isPending} onClick={() => receivePO.mutate(poId)}>
+                Receive Stock
+              </HeaderButton>
+            )}
+          </>
+        }
+      />
+      <PageCard>
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-xs text-gray-400">Supplier</p>

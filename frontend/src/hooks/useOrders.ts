@@ -1,11 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createOrder, deleteOrder, getOrders, updateOrder, updateOrderStatus } from '../api/orders';
-import type { OrderCreate, OrderStatus } from '../types';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createOrder, deleteOrder, getOrders, updateOrder, updateOrderStatus, type OrderSort } from '../api/orders';
+import { PAGE_SIZE } from '../lib/utils';
+import type { ListQueryOptions, OrderCreate, OrderStatus } from '../types';
 
-export function useOrders(status?: OrderStatus, startDate?: string, endDate?: string) {
+export function useOrders(
+  status?: OrderStatus,
+  startDate?: string,
+  endDate?: string,
+  search?: string,
+  options: ListQueryOptions & { sort?: OrderSort } = {},
+) {
+  const page = options.page ?? 1;
+  const pageSize = options.all ? 0 : (options.pageSize ?? PAGE_SIZE);
+  const sort = options.sort ?? 'newest';
+
   return useQuery({
-    queryKey: ['orders', status, startDate, endDate],
-    queryFn: () => getOrders(status, startDate, endDate),
+    queryKey: ['orders', status, startDate, endDate, search, sort, options.all ? 'all' : page, pageSize],
+    queryFn: () => getOrders(status, startDate, endDate, search, page, pageSize, options.all, sort),
+    placeholderData: keepPreviousData,
   });
 }
 

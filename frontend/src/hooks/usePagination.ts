@@ -6,7 +6,7 @@ export function usePagination<T>(items: T[], resetKey = '', perPage = PAGE_SIZE)
 
   useEffect(() => {
     setPage(1);
-  }, [resetKey]);
+  }, [resetKey, perPage]);
 
   const pages = totalPages(items.length, perPage);
   const safePage = Math.min(page, pages);

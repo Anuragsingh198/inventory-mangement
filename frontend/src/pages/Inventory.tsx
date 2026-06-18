@@ -1,9 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Layers, Package, QrCode } from 'lucide-react';
+import type { InventorySort } from '../api/inventory';
 import {
   Badge,
+  DangerButton,
   ErrorState,
+  FilterInput,
   LoadingSkeleton,
   Modal,
   PageCard,
@@ -11,19 +14,24 @@ import {
   Pagination,
   PrimaryButton,
   RowActions,
-  SearchInput,
+  SortSelect,
   TabBar,
   Table,
+  TableArea,
 } from '../components';
+import { getInventory } from '../api/inventory';
 import { useAuth } from '../context/AuthContext';
+import { usePageSize } from '../context/PageSizeContext';
 import { useToast } from '../context/ToastContext';
 import { useCategoryMutations } from '../hooks/useCategories';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useInventory, useInventoryMutations } from '../hooks/useInventory';
 import { useProducts } from '../hooks/useProducts';
-import { usePagination } from '../hooks/usePagination';
+import { useResetPageOnFilterChange } from '../hooks/useResetPageOnFilterChange';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
 import { downloadCsv } from '../lib/export';
 import { getFavorites, isFavorite, toggleFavorite } from '../lib/favorites';
-import { formatCurrency, formatOrderId, PAGE_SIZE } from '../lib/utils';
+import { formatCurrency, formatOrderId } from '../lib/utils';
 import type { InventoryItem } from '../types';
 
 type InventoryTab = 'items' | 'groups' | 'prices';
@@ -48,6 +56,8 @@ export function InventoryPage() {
   const { showToast } = useToast();
   const [tab, setTab] = useState<InventoryTab>('items');
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<InventorySort>('name');
+  const [page, setPage] = useState(1);
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null);
   const [adjustment, setAdjustment] = useState(0);
   const [reason, setReason] = useState('');
@@ -59,25 +69,25 @@ export function InventoryPage() {
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
 
-  const { data: inventory, isLoading, error } = useInventory();
-  const { data: products } = useProducts();
+  const { pageSize } = usePageSize();
+  const inventorySearch = useDebouncedValue(search.trim(), 300) || undefined;
+  useResetPageOnFilterChange(setPage, [inventorySearch, tab, pageSize, sort]);
+
+  const { data, isLoading, isFetching, error } = useInventory(inventorySearch, { page, pageSize, sort });
+  const { data: productsData } = useProducts(undefined, undefined, 'name', { all: true });
   const { adjust, create, remove } = useInventoryMutations();
   const { create: createCategory } = useCategoryMutations();
 
-  const filtered = useMemo(() => {
-    if (!inventory) return [];
-    return inventory.filter(
-      (item) =>
-        item.product?.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.product?.sku.toLowerCase().includes(search.toLowerCase()),
-    );
-  }, [inventory, search]);
-
-  const { page, pages, paged, setPage, total } = usePagination(filtered, `${search}-${tab}`);
+  const inventoryItems = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const pages = data?.pages ?? 1;
+  const products = productsData?.items;
+  const showTableSkeleton = isLoading && !data;
+  const tableLoading = isFetching && !showTableSkeleton;
 
   const refreshFavorites = () => setFavoriteIds(getFavorites());
 
-  const handleQuickAction = (action: QuickAction) => {
+  const handleQuickAction = async (action: QuickAction) => {
     if (!isAdmin && action !== 'barcodes') {
       showToast('Admin access required', 'error');
       return;
@@ -95,15 +105,16 @@ export function InventoryPage() {
       case 'composite':
         navigate('/listings', { state: { openCreate: true } });
         break;
-      case 'barcodes':
-        if (!inventory?.length) {
+      case 'barcodes': {
+        const allInventory = await getInventory(undefined, 1, 0, true);
+        if (!allInventory.items.length) {
           showToast('No inventory to export', 'error');
           return;
         }
         downloadCsv(
           'barcodes.csv',
           ['SKU', 'Product', 'Barcode'],
-          inventory.map((item) => [
+          allInventory.items.map((item) => [
             item.product?.sku ?? '',
             item.product?.name ?? '',
             `INV-${String(item.product_id).padStart(5, '0')}`,
@@ -111,6 +122,7 @@ export function InventoryPage() {
         );
         showToast('Barcodes exported', 'success');
         break;
+      }
     }
   };
 
@@ -172,12 +184,11 @@ export function InventoryPage() {
     showToast(starred ? 'Added to favorites' : 'Removed from favorites', 'success');
   };
 
-  if (isLoading) return <LoadingSkeleton />;
-  if (error) return <ErrorState message="Failed to load inventory" />;
+  if (error && !data) return <ErrorState message="Failed to load inventory" />;
 
   return (
     <div>
-      <PageHeader title="Inventory" />
+      <PageHeader title="Inventory" description={PAGE_DESCRIPTIONS.inventory} />
 
       <div className="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {quickActions.map(({ label, icon: Icon, action }) => (
@@ -197,25 +208,44 @@ export function InventoryPage() {
           active={tab}
           onChange={setTab}
           tabs={[
-            { id: 'items', label: 'Items', count: tab === 'items' ? total : inventory?.length },
+            { id: 'items', label: 'Items', count: tab === 'items' ? total : data?.total },
             { id: 'groups', label: 'Item Groups (Variants)' },
             { id: 'prices', label: 'Price List' },
           ]}
         />
 
+        {(tab === 'items' || tab === 'groups' || tab === 'prices') && (
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <FilterInput
+              value={search}
+              onChange={setSearch}
+              placeholder="ID, product, SKU, category, location, qty..."
+              className="w-full sm:w-72"
+            />
+            {tab !== 'groups' && (
+              <SortSelect
+                value={sort}
+                onChange={(value) => setSort(value as InventorySort)}
+                defaultValue="name"
+                className="shrink-0"
+                options={[
+                  { value: 'name', label: 'Sort: Name' },
+                  { value: 'quantity', label: 'Sort: Qty' },
+                  { value: 'location', label: 'Sort: Location' },
+                ]}
+              />
+            )}
+          </div>
+        )}
+
         {tab === 'items' && (
-          <>
-            <Table
-              headers={['ID', 'Product Name', 'Total QTY', 'Buy Price', 'Sell Price', 'Location', 'Action']}
-              filterRow={
-                <>
-                  <td colSpan={7} className="px-3 py-2">
-                    <SearchInput value={search} onChange={setSearch} placeholder="Filter products..." className="max-w-xs" />
-                  </td>
-                </>
-              }
-            >
-              {paged.map((item) => {
+          <TableArea loading={tableLoading}>
+            {showTableSkeleton ? (
+              <LoadingSkeleton rows={6} />
+            ) : (
+              <>
+            <Table headers={['ID', 'Product Name', 'Total QTY', 'Buy Price', 'Sell Price', 'Location', 'Action']}>
+              {inventoryItems.map((item) => {
                 const buyPrice = Number(item.product?.price ?? 0) * 0.85;
                 const level = stockLevel(item);
                 return (
@@ -247,13 +277,16 @@ export function InventoryPage() {
                 );
               })}
             </Table>
-            <Pagination page={page} total={pages} onChange={setPage} totalItems={total} perPage={PAGE_SIZE} />
-          </>
+            <Pagination page={page} total={pages} onChange={setPage} totalItems={total} />
+              </>
+            )}
+          </TableArea>
         )}
 
         {tab === 'groups' && (
-          <Table headers={['Group Name', 'Variants', 'Total QTY', 'Location']}>
-            {filtered.slice(0, 5).map((item, i) => (
+          <TableArea loading={tableLoading}>
+            <Table headers={['Group Name', 'Variants', 'Total QTY', 'Location']}>
+            {inventoryItems.map((item, i) => (
               <tr key={item.id}>
                 <td className="px-4 py-4 text-sm font-medium">{item.product?.name} Group</td>
                 <td className="px-4 py-4 text-sm">{3 + (i % 4)}</td>
@@ -261,13 +294,18 @@ export function InventoryPage() {
                 <td className="px-4 py-4 text-sm">{item.location ?? 'USA'}</td>
               </tr>
             ))}
-          </Table>
+            </Table>
+          </TableArea>
         )}
 
         {tab === 'prices' && (
-          <>
+          <TableArea loading={tableLoading}>
+            {showTableSkeleton ? (
+              <LoadingSkeleton rows={6} />
+            ) : (
+              <>
             <Table headers={['Product', 'SKU', 'Buy Price', 'Sell Price', 'Margin']}>
-              {paged.map((item) => {
+              {inventoryItems.map((item) => {
                 const sell = Number(item.product?.price ?? 0);
                 const buy = sell * 0.85;
                 return (
@@ -285,8 +323,10 @@ export function InventoryPage() {
                 );
               })}
             </Table>
-            <Pagination page={page} total={pages} onChange={setPage} totalItems={total} perPage={PAGE_SIZE} />
-          </>
+            <Pagination page={page} total={pages} onChange={setPage} totalItems={total} />
+              </>
+            )}
+          </TableArea>
         )}
       </PageCard>
 
@@ -314,7 +354,7 @@ export function InventoryPage() {
           <button type="button" onClick={() => setAdjustItem(null)} className="rounded-lg border px-4 py-2 text-sm">
             Cancel
           </button>
-          <PrimaryButton onClick={handleAdjust}>Apply</PrimaryButton>
+          <PrimaryButton loading={adjust.isPending} onClick={handleAdjust}>Apply</PrimaryButton>
         </div>
       </Modal>
 
@@ -368,7 +408,7 @@ export function InventoryPage() {
           <button type="button" onClick={() => setCreateOpen(false)} className="rounded-lg border px-4 py-2 text-sm">
             Cancel
           </button>
-          <PrimaryButton onClick={handleCreateItem}>Create</PrimaryButton>
+          <PrimaryButton loading={create.isPending} onClick={handleCreateItem}>Create</PrimaryButton>
         </div>
       </Modal>
 
@@ -392,7 +432,7 @@ export function InventoryPage() {
           <button type="button" onClick={() => setGroupOpen(false)} className="rounded-lg border px-4 py-2 text-sm">
             Cancel
           </button>
-          <PrimaryButton onClick={handleCreateGroup}>Create</PrimaryButton>
+          <PrimaryButton loading={createCategory.isPending} onClick={handleCreateGroup}>Create</PrimaryButton>
         </div>
       </Modal>
 
@@ -402,9 +442,7 @@ export function InventoryPage() {
           <button type="button" onClick={() => setDeleteId(null)} className="rounded-lg border px-4 py-2 text-sm">
             Cancel
           </button>
-          <button type="button" onClick={handleDelete} className="rounded-lg bg-red-500 px-4 py-2 text-sm text-white">
-            Delete
-          </button>
+          <DangerButton loading={remove.isPending} onClick={handleDelete}>Delete</DangerButton>
         </div>
       </Modal>
     </div>

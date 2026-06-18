@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import type { ProductSort } from '../api/products';
 import {
   ChannelLink,
+  DangerButton,
   ErrorState,
   FilterInput,
   LoadingSkeleton,
@@ -9,23 +11,27 @@ import {
   PageCard,
   PageHeader,
   Pagination,
+  HeaderButton,
   PrimaryButton,
   RowActions,
   SortSelect,
   Table,
+  TableArea,
 } from '../components';
 import { useAuth } from '../context/AuthContext';
+import { usePageSize } from '../context/PageSizeContext';
 import { useToast } from '../context/ToastContext';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useInventory } from '../hooks/useInventory';
 import { useCategories, useProductMutations, useProducts } from '../hooks/useProducts';
-import { usePagination } from '../hooks/usePagination';
+import { useResetPageOnFilterChange } from '../hooks/useResetPageOnFilterChange';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
+import { getFavorites, isFavorite, toggleFavorite } from '../lib/favorites';
 import {
   formatOrderId,
   getProductChannels,
-  PAGE_SIZE,
   PRODUCT_PLACEHOLDER,
 } from '../lib/utils';
-import { getFavorites, isFavorite, toggleFavorite } from '../lib/favorites';
 import type { Product, ProductCreate } from '../types';
 
 const emptyForm: ProductCreate = {
@@ -43,34 +49,35 @@ export function ListingsPage() {
   const location = useLocation();
   const [params] = useSearchParams();
   const [search, setSearch] = useState(params.get('search') ?? '');
-  const [sort, setSort] = useState('name');
+  const [sort, setSort] = useState<ProductSort>('name');
+  const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductCreate>(emptyForm);
   const [favoriteIds, setFavoriteIds] = useState<number[]>(() => getFavorites());
 
-  const { data: products, isLoading, error } = useProducts(search || undefined);
+  const { pageSize } = usePageSize();
+  const debouncedSearch = useDebouncedValue(search.trim(), 300) || undefined;
+  useResetPageOnFilterChange(setPage, [debouncedSearch, sort, pageSize]);
+
+  const { data, isLoading, isFetching, error } = useProducts(debouncedSearch, undefined, sort, { page, pageSize });
   const { data: categories } = useCategories();
-  const { data: inventory } = useInventory();
+  const { data: inventoryData } = useInventory(undefined, { all: true });
   const { create, update, remove } = useProductMutations();
+
+  const products = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const pages = data?.pages ?? 1;
 
   const qtyMap = useMemo(() => {
     const map = new Map<number, number>();
-    inventory?.forEach((item) => map.set(item.product_id, item.quantity));
+    inventoryData?.items.forEach((item) => map.set(item.product_id, item.quantity));
     return map;
-  }, [inventory]);
+  }, [inventoryData]);
 
-  const sorted = useMemo(() => {
-    if (!products) return [];
-    return [...products].sort((a, b) => {
-      if (sort === 'sku') return a.sku.localeCompare(b.sku);
-      if (sort === 'price') return Number(a.price) - Number(b.price);
-      return a.name.localeCompare(b.name);
-    });
-  }, [products, sort]);
-
-  const { page, pages, paged, setPage, total } = usePagination(sorted, `${search}-${sort}`);
+  const showTableSkeleton = isLoading && !data;
+  const tableLoading = isFetching && !showTableSkeleton;
 
   const openCreate = () => {
     setEditing(null);
@@ -131,43 +138,43 @@ export function ListingsPage() {
     showToast(starred ? 'Added to favorites' : 'Removed from favorites', 'success');
   };
 
-  if (isLoading) return <LoadingSkeleton />;
-  if (error) return <ErrorState message="Failed to load listings" />;
+  if (error && !data) return <ErrorState message="Failed to load listings" />;
 
   return (
     <div>
       <PageHeader
         title="Listings"
-        action={isAdmin && <PrimaryButton onClick={openCreate}>Create Draft</PrimaryButton>}
+        description={PAGE_DESCRIPTIONS.listings}
+        action={isAdmin && <HeaderButton onClick={openCreate}>Create Draft</HeaderButton>}
       />
 
       <PageCard>
-        <Table
-          headers={['ID', '', 'Product Name', 'QTY', 'Active Listings', 'Action']}
-          filterRow={
+        <TableArea loading={tableLoading}>
+          {showTableSkeleton ? (
+            <LoadingSkeleton rows={6} />
+          ) : (
             <>
-              <td className="px-3 py-2" />
-              <td className="px-3 py-2" />
-              <td className="px-3 py-2">
-                <FilterInput value={search} onChange={setSearch} placeholder="Filter name..." />
-              </td>
-              <td className="px-3 py-2" />
-              <td className="px-3 py-2" />
-              <td className="px-3 py-2">
-                <SortSelect
-                  value={sort}
-                  onChange={setSort}
-                  options={[
-                    { value: 'name', label: 'Sort: Name' },
-                    { value: 'sku', label: 'Sort: SKU' },
-                    { value: 'price', label: 'Sort: Price' },
-                  ]}
-                />
-              </td>
-            </>
-          }
-        >
-          {paged.map((product) => {
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <FilterInput
+            value={search}
+            onChange={setSearch}
+            placeholder="ID, name, SKU, or description..."
+            className="w-full sm:w-72"
+          />
+          <SortSelect
+            value={sort}
+            onChange={(value) => setSort(value as ProductSort)}
+            defaultValue="name"
+            className="shrink-0"
+            options={[
+              { value: 'name', label: 'Sort: Name' },
+              { value: 'price', label: 'Sort: Price' },
+              { value: 'quantity', label: 'Sort: Qty' },
+            ]}
+          />
+        </div>
+        <Table headers={['ID', '', 'Product Name', 'QTY', 'Active Listings', 'Action']}>
+          {products.map((product) => {
             const channels = getProductChannels(product.id);
             return (
               <tr key={product.id} className="hover:bg-gray-50/50">
@@ -211,7 +218,10 @@ export function ListingsPage() {
           })}
         </Table>
 
-        <Pagination page={page} total={pages} onChange={setPage} totalItems={total} perPage={PAGE_SIZE} />
+        <Pagination page={page} total={pages} onChange={setPage} totalItems={total} />
+            </>
+          )}
+        </TableArea>
       </PageCard>
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Listing' : 'Create Draft'} size="lg">
@@ -241,7 +251,7 @@ export function ListingsPage() {
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <button onClick={() => setModalOpen(false)} className="rounded-lg border px-4 py-2 text-sm">Cancel</button>
-          <PrimaryButton onClick={handleSubmit}>Save</PrimaryButton>
+          <PrimaryButton loading={create.isPending || update.isPending} onClick={handleSubmit}>Save</PrimaryButton>
         </div>
       </Modal>
 
@@ -249,7 +259,7 @@ export function ListingsPage() {
         <p className="text-sm text-gray-600">Are you sure you want to delete this listing?</p>
         <div className="mt-6 flex justify-end gap-3">
           <button onClick={() => setDeleteId(null)} className="rounded-lg border px-4 py-2 text-sm">Cancel</button>
-          <button onClick={handleDelete} className="rounded-lg bg-red-500 px-4 py-2 text-sm text-white">Delete</button>
+          <DangerButton loading={remove.isPending} onClick={handleDelete}>Delete</DangerButton>
         </div>
       </Modal>
     </div>

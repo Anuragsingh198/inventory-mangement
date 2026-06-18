@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-import { Badge, ErrorState, LoadingSkeleton, PageCard, Table } from '../components';
+import { Badge, ErrorState, LoadingSkeleton, PageCard, PageHeader, Table } from '../components';
 import { useWarehouse, useWarehouseLocations } from '../hooks/useEnterprise';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
 import { formatDate } from '../lib/utils';
 
 export function WarehouseDetailPage() {
@@ -15,12 +15,14 @@ export function WarehouseDetailPage() {
 
   return (
     <div>
-      <Link to="/warehouses" className="text-sm text-brand hover:underline">← Back to Warehouses</Link>
+      <PageHeader
+        title={warehouse.name}
+        description={PAGE_DESCRIPTIONS.warehouseDetail}
+        showDate={false}
+        backTo={{ label: 'Back to Warehouses', path: '/warehouses' }}
+        action={<Badge variant={warehouse.is_active ? 'success' : 'danger'}>{warehouse.is_active ? 'Active' : 'Inactive'}</Badge>}
+      />
       <PageCard>
-        <div className="mb-6 flex items-center gap-3">
-          <h1 className="text-xl font-bold">{warehouse.name}</h1>
-          <Badge variant={warehouse.is_active ? 'success' : 'danger'}>{warehouse.is_active ? 'Active' : 'Inactive'}</Badge>
-        </div>
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-xs text-gray-400">Code</p>

@@ -1,23 +1,39 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Modal, PageCard, PageHeader, Pagination, PrimaryButton, Table } from '../components';
+import type { OrderSort } from '../api/orders';
+import { FilterInput, Modal, PageCard, PageHeader, Pagination, HeaderButton, PrimaryButton, SortSelect, Table, TableArea } from '../components';
 import { useAuth } from '../context/AuthContext';
+import { usePageSize } from '../context/PageSizeContext';
 import { useToast } from '../context/ToastContext';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useOrderMutations, useOrders } from '../hooks/useOrders';
-import { usePagination } from '../hooks/usePagination';
-import { formatDate, formatOrderId, PAGE_SIZE } from '../lib/utils';
+import { useResetPageOnFilterChange } from '../hooks/useResetPageOnFilterChange';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
+import { getApiErrorMessage } from '../lib/apiError';
+import { formatDate, formatOrderId } from '../lib/utils';
 
 export function ShipmentsPage() {
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number>(0);
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<OrderSort>('newest');
+  const { pageSize } = usePageSize();
+  const [page, setPage] = useState(1);
 
-  const { data: orders, isLoading } = useOrders('received');
-  const { data: pendingOrders } = useOrders('pending');
+  const orderSearch = useDebouncedValue(search.trim(), 300) || undefined;
+  useResetPageOnFilterChange(setPage, [orderSearch, pageSize, sort]);
+
+  const { data, isLoading, isFetching } = useOrders('received', undefined, undefined, orderSearch, { page, pageSize, sort });
+  const { data: pendingData } = useOrders('pending', undefined, undefined, undefined, { all: true });
   const { updateStatus } = useOrderMutations();
 
-  const { page, pages, paged, setPage, total } = usePagination(orders ?? [], 'shipments');
+  const orders = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const pages = data?.pages ?? 1;
+  const pendingOrders = pendingData?.items ?? [];
+  const tableLoading = isFetching && !isLoading;
 
   const handleReceive = async () => {
     if (!selectedOrderId) {
@@ -29,8 +45,8 @@ export function ShipmentsPage() {
       showToast('Shipment created — order marked received', 'success');
       setModalOpen(false);
       setSelectedOrderId(0);
-    } catch {
-      showToast('Failed to create shipment', 'error');
+    } catch (err) {
+      showToast(getApiErrorMessage(err, 'Failed to create shipment'), 'error');
     }
   };
 
@@ -38,19 +54,39 @@ export function ShipmentsPage() {
     <div>
       <PageHeader
         title="Shipments"
+        description={PAGE_DESCRIPTIONS.shipments}
         action={
           isAdmin && (
-            <PrimaryButton onClick={() => setModalOpen(true)}>New Shipment</PrimaryButton>
+            <HeaderButton onClick={() => setModalOpen(true)}>New Shipment</HeaderButton>
           )
         }
       />
       <PageCard>
-        {isLoading ? (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <FilterInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Order #, customer, status..."
+            className="w-full sm:w-72"
+          />
+          <SortSelect
+            value={sort}
+            onChange={(value) => setSort(value as OrderSort)}
+            defaultValue="newest"
+            className="shrink-0"
+            options={[
+              { value: 'newest', label: 'Sort: Newest' },
+              { value: 'oldest', label: 'Sort: Oldest' },
+              { value: 'customer', label: 'Sort: Customer' },
+            ]}
+          />
+        </div>
+        {isLoading && !data ? (
           <p className="py-8 text-center text-sm text-gray-400">Loading...</p>
         ) : (
-          <>
+          <TableArea loading={tableLoading}>
             <Table headers={['Shipment#', 'Order#', 'Customer', 'Ship Date', 'Carrier', 'Status']}>
-              {paged.map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50/50">
                   <td className="px-4 py-4 text-sm font-medium">SH-{formatOrderId(order.id)}</td>
                   <td className="px-4 py-4 text-sm">
@@ -72,8 +108,8 @@ export function ShipmentsPage() {
                 </tr>
               )}
             </Table>
-            <Pagination page={page} total={pages} onChange={setPage} totalItems={total} perPage={PAGE_SIZE} />
-          </>
+            <Pagination page={page} total={pages} onChange={setPage} totalItems={total} />
+          </TableArea>
         )}
       </PageCard>
 
@@ -87,7 +123,7 @@ export function ShipmentsPage() {
           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
         >
           <option value={0}>Select pending order</option>
-          {pendingOrders?.map((order) => (
+          {pendingOrders.map((order) => (
             <option key={order.id} value={order.id}>
               {formatOrderId(order.id)} — {order.supplier}
             </option>
@@ -97,7 +133,7 @@ export function ShipmentsPage() {
           <button type="button" onClick={() => setModalOpen(false)} className="rounded-lg border px-4 py-2 text-sm">
             Cancel
           </button>
-          <PrimaryButton onClick={handleReceive}>Create Shipment</PrimaryButton>
+          <PrimaryButton loading={updateStatus.isPending} onClick={handleReceive}>Create Shipment</PrimaryButton>
         </div>
       </Modal>
     </div>

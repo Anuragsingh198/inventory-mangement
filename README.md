@@ -15,7 +15,7 @@ React · TypeScript · FastAPI · PostgreSQL · Resend
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-[Features](#features) · [Flows](#application-flows) · [Getting Started](#getting-started) · [API](#api-reference) · [Schema](#database-schema)
+[Features](#features) · [List views](#list-views-search-sort--pagination) · [Flows](#application-flows) · [Getting Started](#getting-started) · [API](#api-reference) · [Schema](#database-schema)
 
 </div>
 
@@ -36,6 +36,7 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 ## Table of Contents
 
 - [Features](#features)
+- [List views: search, sort & pagination](#list-views-search-sort--pagination)
 - [Tech Stack](#tech-stack)
 - [Application Flows](#application-flows)
 - [Architecture](#architecture)
@@ -55,14 +56,14 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 | Module | Capabilities |
 |--------|-------------|
 | **Auth & RBAC** | JWT login/register, 6 roles, permission matrix, activity & login logs |
-| **Product catalog** | SKU, variants, barcodes, subcategories, product detail pages |
+| **Product catalog** | SKU, variants, barcodes, subcategories, server-side search/sort/pagination |
 | **Inventory & WMS** | Multi-warehouse balances, stock movements ledger, transfers, cycle counts |
 | **Procurement** | Suppliers, purchase orders (approve/receive), vendor invoices |
 | **Sales** | Customers, sales orders (fulfill), invoices, shipments |
 | **Batches & serials** | Batch tracking, expiry dates, serial number registry |
 | **Audits** | Inventory audits with variance reconciliation |
 | **Alerts & email** | Low-stock / critical alerts, in-app inbox, Resend email delivery |
-| **Analytics** | Dashboard KPIs, revenue charts, demand forecasting |
+| **Analytics** | Dashboard KPIs (overflow-safe stat cards), revenue charts, demand forecasting |
 | **AI assistant** | Natural-language queries, dead-stock insights, reorder suggestions |
 | **Import / export** | CSV import for products & inventory; report exports |
 | **Legacy orders** | Original order/payment/shipment flows retained for compatibility |
@@ -81,11 +82,78 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 
 - **Single stock write path** — all quantity changes go through `StockMovementService`
 - **Structured DRY backend** — domain-split models, thin routers, centralized services
+- **Server-side list APIs** — search, sort, and pagination handled in FastAPI (not in the browser)
+- **Consistent table UX** — search + sort toolbar above tables, shared rows-per-page control
 - **Detail pages** — products, suppliers, warehouses, purchase orders, sales orders
 - **Seed script** — demo users, 20 products, 3 warehouses, POs, SOs, batches, audits
 - **Enterprise UI** — grouped sidebar nav, navy shell, filter cards, toast notifications
 
 > **Not included:** ERP / e-commerce API integrations (Shopify, SAP, etc.)
+
+---
+
+## List views: search, sort & pagination
+
+All major list screens load data from the **backend** with query parameters. The frontend does not filter or sort full datasets in memory.
+
+### Paginated response shape
+
+List endpoints return:
+
+```json
+{
+  "items": [],
+  "total": 0,
+  "page": 1,
+  "page_size": 10,
+  "pages": 1
+}
+```
+
+| Query param | Description |
+|-------------|-------------|
+| `search` | Free-text filter (fields vary by endpoint; supports `#` prefix and zero-padded IDs where applicable) |
+| `sort` | Sort field/key (see table below) |
+| `page` | Page number (1-based) |
+| `page_size` | Rows per page (`0` = return all — used for dropdowns and exports) |
+
+### Backend list endpoints
+
+| Endpoint | Search fields | Sort options | Default sort |
+|----------|---------------|--------------|--------------|
+| `GET /products` | ID, name, SKU, description | `name`, `price`, `quantity` | `name` |
+| `GET /inventory` | ID, product, SKU, category, location, qty | `name`, `quantity`, `location` | `id` |
+| `GET /orders` | Order #, customer, status, product, notes | `newest`, `oldest`, `customer` | `newest` |
+| `GET /purchases` | PO #, supplier, status | `newest`, `oldest`, `supplier` | `newest` |
+| `GET /sales/orders` | SO #, customer, status | `newest`, `oldest`, `customer` | `newest` |
+| `GET /suppliers` | Name, contact, email, phone | `name`, `rating`, `newest` | `name` |
+| `GET /warehouses` | Code, name, address | `name`, `code` | `name` |
+
+**Examples:**
+
+```http
+GET /products?search=000042&sort=quantity&page=1&page_size=25
+GET /orders?status=pending&search=acme&sort=newest&page=2&page_size=10
+GET /purchases?search=approved&sort=supplier&page=1&page_size=50
+```
+
+### Frontend patterns
+
+| Piece | Location | Role |
+|-------|----------|------|
+| `PageSizeContext` | `frontend/src/context/PageSizeContext.tsx` | Shared rows-per-page (10 / 25 / 50 / 100), persisted in `localStorage` |
+| `Pagination` | `frontend/src/components/index.tsx` | Page controls + rows-per-page dropdown |
+| `useDebouncedValue` | `frontend/src/hooks/useDebouncedValue.ts` | 300ms debounce on search inputs |
+| `useResetPageOnFilterChange` | `frontend/src/hooks/useResetPageOnFilterChange.ts` | Resets to page 1 when search, sort, filters, or page size change |
+| React Query `keepPreviousData` | List hooks | Smooth loading while paginating |
+
+**Pages using server-side lists:** Listings, Inventory, Orders, Payments, Shipments, Reports, Purchases, Sales Orders, Suppliers, Warehouses.
+
+**UI layout:** Search and sort controls sit in a **toolbar above the table** (left-aligned), not inside column headers.
+
+### Date filters (Reports / Orders)
+
+Report and order date ranges use **inclusive** end dates (through end of day). Invalid ranges (start after end) are ignored server-side and surfaced in the UI.
 
 ---
 
@@ -162,7 +230,7 @@ sequenceDiagram
     participant A as FastAPI /auth
     participant D as PostgreSQL
 
-    U->>L: Enter email + password
+    U->>L: Email/password OR quick demo role
     L->>A: POST /auth/login
     A->>D: Verify credentials
     D-->>A: User record + role
@@ -174,6 +242,8 @@ sequenceDiagram
     A->>A: Validate token + require_permission()
     A-->>U: JSON response
 ```
+
+On the login page, **Quick demo login** shows role buttons (Admin, Manager, Warehouse, Sales, Viewer). Hover a role to see what it can do; click to sign in instantly. Credentials are not shown in the UI — use the table below or manual email/password login.
 
 ---
 
@@ -316,7 +386,7 @@ npm run dev
 
 ### Demo credentials
 
-All five accounts are created by `seed.py` (upserted by email if missing):
+All five accounts are created by `seed.py` (upserted by email if missing). You can sign in manually or use **Quick demo login** on the login page.
 
 | Role | Email | Password |
 |------|-------|----------|
@@ -338,10 +408,13 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 CORS_ORIGINS=http://localhost:5173
 
-# Resend email notifications (optional — alerts still work in-app without this)
+# Resend email notifications (optional — in-app alerts work without this)
+# 1. Sign up at https://resend.com and create an API key
+# 2. Use onboarding@resend.dev as sender until you verify your own domain
+# 3. On free tier, emails can only go to your Resend account email
 RESEND_API_KEY=re_your_api_key_here
-RESEND_FROM_EMAIL=Ventorio <alerts@yourdomain.com>
-ALERT_EMAIL_RECIPIENTS=admin@inventory.com
+RESEND_FROM_EMAIL=Ventorio <onboarding@resend.dev>
+ALERT_EMAIL_RECIPIENTS=you@example.com
 
 # Google OAuth (optional)
 GOOGLE_CLIENT_ID=
@@ -365,6 +438,18 @@ cd backend && ./venv/bin/python seed.py
 ```
 
 The seed script fills empty tables and upserts missing demo users. Safe to re-run.
+
+### Email alerts (Resend)
+
+Low-stock alerts appear in **Notifications** in the app. To also send email:
+
+1. Add `RESEND_API_KEY` to `backend/.env` (get it from [resend.com](https://resend.com))
+2. Set `RESEND_FROM_EMAIL=Ventorio <onboarding@resend.dev>` (use your verified domain later)
+3. Set `ALERT_EMAIL_RECIPIENTS` to the email(s) that should receive alerts
+4. On Resend's free/testing tier, emails can only be sent to **your Resend account email** until you verify a domain
+5. Restart the backend, open **Notifications**, and click **Send test email** to verify
+
+**How it works:** when stock drops below threshold, `StockMovementService` → `alert_service` creates an in-app alert → `notification_service` sends email via Resend API to `ALERT_EMAIL_RECIPIENTS` (or admin/manager users if unset).
 
 ---
 
@@ -395,7 +480,7 @@ Full interactive docs: **http://localhost:8000/docs**
 | `POST` | `/categories` | Create category | Write |
 | `PATCH` | `/categories/{id}` | Update category | Write |
 | `DELETE` | `/categories/{id}` | Delete category | Write |
-| `GET` | `/products` | List products (`?search=`) | Yes |
+| `GET` | `/products` | Paginated products (`?search=&sort=name\|price\|quantity&page=&page_size=`) | Yes |
 | `GET` | `/products/{id}` | Get product + variants | Yes |
 | `POST` | `/products` | Create product | Write |
 | `PATCH` | `/products/{id}` | Update product | Write |
@@ -408,10 +493,10 @@ Full interactive docs: **http://localhost:8000/docs**
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| `GET` | `/inventory` | List inventory | Yes |
+| `GET` | `/inventory` | Paginated inventory (`?search=&sort=name\|quantity\|location&page=&page_size=`) | Yes |
 | `GET` | `/inventory/low-stock` | Low-stock items | Yes |
 | `POST` | `/inventory/{id}/adjust` | Adjust quantity | Write |
-| `GET` | `/warehouses` | List warehouses | Yes |
+| `GET` | `/warehouses` | Paginated warehouses (`?search=&sort=name\|code&page=&page_size=`) | Yes |
 | `GET` | `/warehouses/{id}` | Warehouse detail + balances | Yes |
 | `POST` | `/warehouses/transfers` | Inter-warehouse transfer | Write |
 | `GET` | `/warehouses/transfers` | List transfers | Yes |
@@ -423,10 +508,10 @@ Full interactive docs: **http://localhost:8000/docs**
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| `GET` | `/suppliers` | List suppliers | Yes |
+| `GET` | `/suppliers` | Paginated suppliers (`?search=&sort=name\|rating\|newest&page=&page_size=`) | Yes |
 | `GET` | `/suppliers/{id}` | Supplier detail | Yes |
 | `POST` | `/suppliers` | Create supplier | Write |
-| `GET` | `/purchases` | List purchase orders | Yes |
+| `GET` | `/purchases` | Paginated POs (`?search=&sort=newest\|oldest\|supplier&page=&page_size=`) | Yes |
 | `GET` | `/purchases/{id}` | PO detail + line items | Yes |
 | `POST` | `/purchases` | Create PO | Write |
 | `POST` | `/purchases/{id}/approve` | Approve PO | Write |
@@ -441,7 +526,7 @@ Full interactive docs: **http://localhost:8000/docs**
 |--------|----------|-------------|------|
 | `GET` | `/sales/customers` | List customers | Yes |
 | `POST` | `/sales/customers` | Create customer | Write |
-| `GET` | `/sales/orders` | List sales orders | Yes |
+| `GET` | `/sales/orders` | Paginated sales orders (`?search=&sort=newest\|oldest\|customer&page=&page_size=`) | Yes |
 | `GET` | `/sales/orders/{id}` | SO detail | Yes |
 | `POST` | `/sales/orders` | Create sales order | Write |
 | `POST` | `/sales/orders/{id}/fulfill` | Fulfill + deduct stock | Write |
@@ -470,12 +555,14 @@ Full interactive docs: **http://localhost:8000/docs**
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| `GET` | `/orders` | List legacy orders | Yes |
+| `GET` | `/orders` | Paginated legacy orders (`?status=&search=&sort=newest\|oldest\|customer&start_date=&end_date=&page=&page_size=`) | Yes |
 | `POST` | `/orders` | Create order | Write |
 | `GET` | `/reports/summary` | Dashboard stats | Yes |
 | `GET` | `/reports/export` | Inventory CSV | Yes |
 | `GET` | `/alerts` | List alerts | Yes |
 | `PATCH` | `/alerts/{id}/read` | Mark read | Yes |
+| `GET` | `/notifications/email-config` | Email provider status | Yes |
+| `POST` | `/notifications/test-email` | Send test alert email | Yes |
 
 </details>
 
@@ -530,6 +617,7 @@ inventory/
 │   │   ├── routers/           # auth, products, inventory, warehouses,
 │   │   │                      # suppliers, purchases, sales, batches,
 │   │   │                      # audits, ai, import_export, …
+│   │   ├── utils/             # pagination, date_range helpers
 │   │   └── services/          # stock_movement, notification, alert,
 │   │                          # audit, forecast, ai, order, import_export
 │   ├── requirements.txt
@@ -537,10 +625,11 @@ inventory/
 │   └── seed.py                # Comprehensive demo data + user upsert
 └── frontend/
     └── src/
-        ├── api/                 # Axios clients (enterprise.ts, …)
-        ├── components/          # Layout, shared UI
-        ├── context/             # Auth + toast
-        ├── hooks/               # React Query hooks (useEnterprise, …)
+        ├── api/                 # Axios clients (orders, products, enterprise, …)
+        ├── components/          # Layout, Table, Pagination, StatCard, …
+        ├── context/             # Auth, toast, PageSize
+        ├── hooks/               # React Query hooks + useDebouncedValue,
+        │                        # useResetPageOnFilterChange, usePagination
         ├── pages/               # All route pages + detail views
         └── types/               # TypeScript interfaces
 ```

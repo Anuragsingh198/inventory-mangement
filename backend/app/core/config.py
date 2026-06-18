@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     # Resend email
     RESEND_API_KEY: str = ""
-    RESEND_FROM_EMAIL: str = "Ventorio <alerts@ventorio.app>"
+    RESEND_FROM_EMAIL: str = "Ventorio <onboarding@resend.dev>"
     ALERT_EMAIL_RECIPIENTS: str = ""  # comma-separated
 
     # Google OAuth (optional)

@@ -1,6 +1,9 @@
+from typing import Annotated, Literal
+
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.deps import require_permission
@@ -14,15 +17,48 @@ from app.schemas import (
     WarehouseTransferCreate,
     WarehouseTransferResponse,
 )
+from app.schemas.common import PaginatedResponse
 from app.services.audit_service import log_activity
 from app.services.stock_movement_service import StockMovementService
+from app.utils.pagination import paginate_query, total_pages
 
 router = APIRouter(prefix="/warehouses", tags=["warehouses"])
 
 
-@router.get("", response_model=list[WarehouseResponse])
-def list_warehouses(db: Session = Depends(get_db), _: User = Depends(require_permission("warehouses.read"))):
-    return db.query(Warehouse).order_by(Warehouse.name).all()
+@router.get("", response_model=PaginatedResponse[WarehouseResponse])
+def list_warehouses(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_permission("warehouses.read"))],
+    search: str | None = Query(default=None),
+    sort: Literal["name", "code"] = Query(default="name"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=0, le=500),
+):
+    query = db.query(Warehouse)
+    if search:
+        term = search.strip()
+        if term:
+            pattern = f"%{term}%"
+            query = query.filter(
+                or_(
+                    Warehouse.name.ilike(pattern),
+                    Warehouse.code.ilike(pattern),
+                    Warehouse.address.ilike(pattern),
+                )
+            )
+    if sort == "code":
+        query = query.order_by(Warehouse.code)
+    else:
+        query = query.order_by(Warehouse.name)
+
+    items, total = paginate_query(query, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size if page_size > 0 else total,
+        pages=total_pages(total, page_size),
+    )
 
 
 @router.post("", response_model=WarehouseResponse, status_code=status.HTTP_201_CREATED)

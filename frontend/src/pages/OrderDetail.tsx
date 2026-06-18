@@ -1,23 +1,28 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Copy, Trash2 } from 'lucide-react';
 import {
   Badge,
+  DangerButton,
   ErrorState,
   LoadingSkeleton,
+  HeaderOutlineButton,
   OutlineButton,
   PageCard,
+  PageHeader,
   PrimaryButton,
   Pagination,
   Table,
 } from '../components';
 import { useAuth } from '../context/AuthContext';
+import { usePageSize } from '../context/PageSizeContext';
 import { useToast } from '../context/ToastContext';
 import { useOrder } from '../hooks/useOrder';
 import { useOrderMutations } from '../hooks/useOrders';
 import { usePagination } from '../hooks/usePagination';
 import { downloadCsv, printHtml } from '../lib/export';
-import { formatCurrency, formatDate, formatOrderId, orderTotal, PAGE_SIZE } from '../lib/utils';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
+import { formatCurrency, formatDate, formatOrderId, orderTotal } from '../lib/utils';
 import type { OrderStatus } from '../types';
 
 export function OrderDetailPage() {
@@ -29,7 +34,8 @@ export function OrderDetailPage() {
   const { data: order, isLoading, error } = useOrder(orderId);
   const { updateStatus, update } = useOrderMutations();
   const [notes, setNotes] = useState('');
-  const { page, pages, paged, setPage, total: itemCount } = usePagination(order?.items ?? [], `order-${orderId}`);
+  const { pageSize } = usePageSize();
+  const { page, pages, paged, setPage, total: itemCount } = usePagination(order?.items ?? [], `order-${orderId}`, pageSize);
 
   useEffect(() => {
     if (order?.notes) setNotes(order.notes);
@@ -41,6 +47,8 @@ export function OrderDetailPage() {
   const subtotal = orderTotal(order.items);
   const tax = subtotal * 0.2;
   const total = subtotal + tax;
+
+  const statusUpdating = updateStatus.isPending ? updateStatus.variables?.status : undefined;
 
   const handleStatus = async (status: OrderStatus) => {
     try {
@@ -105,29 +113,22 @@ export function OrderDetailPage() {
 
   return (
     <div>
-      <div className="mb-4">
-        <Link to="/orders" className="text-sm text-brand hover:underline">
-          ← Back to Orders
-        </Link>
-      </div>
+      <PageHeader
+        title={`Order ${formatOrderId(order.id)} — ${order.supplier}`}
+        description={PAGE_DESCRIPTIONS.orderDetail}
+        showDate={false}
+        backTo={{ label: 'Back to Orders', path: '/orders' }}
+        action={
+          <>
+            <Badge variant={statusVariant}>{statusLabel}</Badge>
+            <HeaderOutlineButton onClick={handleExcel}>Excel</HeaderOutlineButton>
+            <HeaderOutlineButton onClick={handlePdf}>PDF</HeaderOutlineButton>
+            <HeaderOutlineButton onClick={handlePrint}>Print</HeaderOutlineButton>
+          </>
+        }
+      />
 
       <PageCard>
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold">
-                Sales Order {formatOrderId(order.id)} {order.supplier}
-              </h1>
-              <Badge variant={statusVariant}>{statusLabel}</Badge>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <OutlineButton onClick={handleExcel}>Excel</OutlineButton>
-            <OutlineButton onClick={handlePdf}>PDF</OutlineButton>
-            <OutlineButton onClick={handlePrint}>Print</OutlineButton>
-          </div>
-        </div>
-
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="text-xs text-gray-400">Customer Name</label>
@@ -201,7 +202,7 @@ export function OrderDetailPage() {
           ))}
         </Table>
 
-        <Pagination page={page} total={pages} onChange={setPage} totalItems={itemCount} perPage={PAGE_SIZE} />
+        <Pagination page={page} total={pages} onChange={setPage} totalItems={itemCount} />
 
         <div className="mt-6 flex justify-end">
           <div className="w-64 space-y-2 text-sm">
@@ -236,17 +237,27 @@ export function OrderDetailPage() {
           <OutlineButton onClick={() => navigate('/orders')}>Cancel</OutlineButton>
           {isAdmin && order.status === 'pending' && (
             <>
-              <PrimaryButton onClick={() => handleStatus('received')}>Mark Received</PrimaryButton>
-              <button
-                type="button"
+              <PrimaryButton
+                loading={statusUpdating === 'received'}
+                disabled={updateStatus.isPending || update.isPending}
+                onClick={() => handleStatus('received')}
+              >
+                Mark Received
+              </PrimaryButton>
+              <DangerButton
+                loading={statusUpdating === 'cancelled'}
+                disabled={updateStatus.isPending || update.isPending}
                 onClick={() => handleStatus('cancelled')}
-                className="rounded-lg bg-red-500 px-5 py-2.5 text-sm text-white"
               >
                 Cancel Order
-              </button>
+              </DangerButton>
             </>
           )}
-          {isAdmin && <PrimaryButton onClick={handleSave}>Save</PrimaryButton>}
+          {isAdmin && (
+            <PrimaryButton loading={update.isPending} disabled={updateStatus.isPending} onClick={handleSave}>
+              Save
+            </PrimaryButton>
+          )}
         </div>
       </PageCard>
     </div>

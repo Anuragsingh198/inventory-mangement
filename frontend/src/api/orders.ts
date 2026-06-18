@@ -1,17 +1,34 @@
-import type { Order, OrderCreate, OrderStatus } from '../types';
+import type { Order, OrderCreate, OrderStatus, Paginated } from '../types';
+import { PAGE_SIZE } from '../lib/utils';
 import { apiClient } from './client';
+
+export type OrderSort = 'newest' | 'oldest' | 'customer';
 
 export async function getOrder(id: number): Promise<Order> {
   const { data } = await apiClient.get<Order>(`/orders/${id}`);
   return data;
 }
 
-export async function getOrders(status?: OrderStatus, startDate?: string, endDate?: string): Promise<Order[]> {
-  const params: Record<string, string> = {};
+export async function getOrders(
+  status?: OrderStatus,
+  startDate?: string,
+  endDate?: string,
+  search?: string,
+  page = 1,
+  pageSize = PAGE_SIZE,
+  all = false,
+  sort: OrderSort = 'newest',
+): Promise<Paginated<Order>> {
+  const params: Record<string, string | number> = {
+    page,
+    page_size: all ? 0 : pageSize,
+    sort,
+  };
   if (status) params.status = status;
   if (startDate) params.start_date = startDate;
   if (endDate) params.end_date = endDate;
-  const { data } = await apiClient.get<Order[]>('/orders', { params });
+  if (search) params.search = search;
+  const { data } = await apiClient.get<Paginated<Order>>('/orders', { params });
   return data;
 }
 

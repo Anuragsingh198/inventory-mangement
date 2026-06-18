@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated, Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Session
 
 from app.core.deps import require_permission
@@ -12,13 +15,50 @@ from app.schemas import (
     SupplierResponse,
     SupplierUpdate,
 )
+from app.schemas.common import PaginatedResponse
+from app.utils.pagination import paginate_query, total_pages
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
 
 
-@router.get("", response_model=list[SupplierResponse])
-def list_suppliers(db: Session = Depends(get_db), _: User = Depends(require_permission("suppliers.read"))):
-    return db.query(Supplier).order_by(Supplier.name).all()
+@router.get("", response_model=PaginatedResponse[SupplierResponse])
+def list_suppliers(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_permission("suppliers.read"))],
+    search: str | None = Query(default=None),
+    sort: Literal["name", "rating", "newest"] = Query(default="name"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=0, le=500),
+):
+    query = db.query(Supplier)
+    if search:
+        term = search.strip()
+        if term:
+            pattern = f"%{term}%"
+            query = query.filter(
+                or_(
+                    Supplier.name.ilike(pattern),
+                    Supplier.contact_name.ilike(pattern),
+                    Supplier.email.ilike(pattern),
+                    Supplier.phone.ilike(pattern),
+                    cast(Supplier.id, String).ilike(pattern),
+                )
+            )
+    if sort == "rating":
+        query = query.order_by(Supplier.rating.desc().nullslast(), Supplier.name)
+    elif sort == "newest":
+        query = query.order_by(Supplier.created_at.desc())
+    else:
+        query = query.order_by(Supplier.name)
+
+    items, total = paginate_query(query, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size if page_size > 0 else total,
+        pages=total_pages(total, page_size),
+    )
 
 
 @router.get("/{supplier_id}", response_model=SupplierResponse)

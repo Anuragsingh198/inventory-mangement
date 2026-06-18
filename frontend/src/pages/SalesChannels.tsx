@@ -1,11 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { PageHeader, PrimaryButton } from '../components';
+import { HeaderButton, PageHeader } from '../components';
 import { useProducts } from '../hooks/useProducts';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
 import { SALES_CHANNELS } from '../lib/utils';
 
 export function SalesChannelsPage() {
   const navigate = useNavigate();
-  const { data: products } = useProducts();
+  const { data: productsData } = useProducts(undefined, undefined, 'name', { all: true });
+  const products = productsData?.items ?? [];
 
   const channelStats = SALES_CHANNELS.map((name, i) => {
     const listings = products?.filter((p) => p.id % SALES_CHANNELS.length === i).length ?? (i + 3) * 12;
@@ -25,10 +27,11 @@ export function SalesChannelsPage() {
     <div>
       <PageHeader
         title="Sales Channels"
+        description={PAGE_DESCRIPTIONS.salesChannels}
         action={
-          <PrimaryButton onClick={() => navigate('/listings', { state: { openCreate: true } })}>
+          <HeaderButton onClick={() => navigate('/listings', { state: { openCreate: true } })}>
             Connect Channel
-          </PrimaryButton>
+          </HeaderButton>
         }
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-import { ErrorState, LoadingSkeleton, PageCard, Table } from '../components';
+import { ErrorState, LoadingSkeleton, PageCard, PageHeader, Table } from '../components';
 import { useSupplier, useSupplierPayments } from '../hooks/useEnterprise';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
 import { formatCurrency, formatDate } from '../lib/utils';
 
 export function SupplierDetailPage() {
@@ -15,9 +15,13 @@ export function SupplierDetailPage() {
 
   return (
     <div>
-      <Link to="/suppliers" className="text-sm text-brand hover:underline">← Back to Suppliers</Link>
+      <PageHeader
+        title={supplier.name}
+        description={PAGE_DESCRIPTIONS.supplierDetail}
+        showDate={false}
+        backTo={{ label: 'Back to Suppliers', path: '/suppliers' }}
+      />
       <PageCard>
-        <h1 className="mb-6 text-xl font-bold">{supplier.name}</h1>
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <p className="text-xs text-gray-400">Contact</p>

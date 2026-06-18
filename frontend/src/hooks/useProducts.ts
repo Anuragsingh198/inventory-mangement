@@ -1,11 +1,28 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createProduct, deleteProduct, getCategories, getProducts, updateProduct } from '../api/products';
-import type { ProductCreate } from '../types';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  createProduct,
+  deleteProduct,
+  getCategories,
+  getProducts,
+  updateProduct,
+  type ProductSort,
+} from '../api/products';
+import { PAGE_SIZE } from '../lib/utils';
+import type { ListQueryOptions, ProductCreate } from '../types';
 
-export function useProducts(search?: string, categoryId?: number) {
+export function useProducts(
+  search?: string,
+  categoryId?: number,
+  sort: ProductSort = 'name',
+  options: ListQueryOptions = {},
+) {
+  const page = options.page ?? 1;
+  const pageSize = options.all ? 0 : (options.pageSize ?? PAGE_SIZE);
+
   return useQuery({
-    queryKey: ['products', search, categoryId],
-    queryFn: () => getProducts(search, categoryId),
+    queryKey: ['products', search, categoryId, sort, options.all ? 'all' : page, pageSize],
+    queryFn: () => getProducts(search, categoryId, sort, page, pageSize, options.all),
+    placeholderData: keepPreviousData,
   });
 }
 

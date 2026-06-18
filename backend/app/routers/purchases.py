@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated, Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.deps import require_permission
 from app.database import get_db
-from app.models import Product, PurchaseOrder, PurchaseOrderLine, PurchaseOrderStatus, User, VendorInvoice
+from app.models import Product, PurchaseOrder, PurchaseOrderLine, PurchaseOrderStatus, Supplier, User, VendorInvoice
 from app.schemas import (
     MessageResponse,
     PurchaseOrderCreate,
@@ -12,7 +15,9 @@ from app.schemas import (
     VendorInvoiceCreate,
     VendorInvoiceResponse,
 )
+from app.schemas.common import PaginatedResponse
 from app.services.order_service import PurchaseService
+from app.utils.pagination import paginate_query, total_pages
 
 router = APIRouter(prefix="/purchases", tags=["purchases"])
 
@@ -26,13 +31,46 @@ def _load_po(db: Session, po_id: int) -> PurchaseOrder | None:
     )
 
 
-@router.get("", response_model=list[PurchaseOrderResponse])
-def list_purchase_orders(db: Session = Depends(get_db), _: User = Depends(require_permission("purchases.read"))):
-    return (
-        db.query(PurchaseOrder)
-        .options(joinedload(PurchaseOrder.items), joinedload(PurchaseOrder.supplier))
-        .order_by(PurchaseOrder.created_at.desc())
-        .all()
+@router.get("", response_model=PaginatedResponse[PurchaseOrderResponse])
+def list_purchase_orders(
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[User, Depends(require_permission("purchases.read"))],
+    search: str | None = Query(default=None),
+    sort: Literal["newest", "oldest", "supplier"] = Query(default="newest"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=0, le=500),
+):
+    query = db.query(PurchaseOrder).options(joinedload(PurchaseOrder.items), joinedload(PurchaseOrder.supplier))
+    joined_supplier = False
+    if search:
+        term = search.strip().lstrip("#")
+        if term:
+            pattern = f"%{term}%"
+            query = query.join(PurchaseOrder.supplier).filter(
+                or_(
+                    cast(PurchaseOrder.id, String).ilike(pattern),
+                    func.lpad(cast(PurchaseOrder.id, String), 6, "0").ilike(pattern),
+                    Supplier.name.ilike(pattern),
+                    cast(PurchaseOrder.status, String).ilike(pattern),
+                )
+            )
+            joined_supplier = True
+    if sort == "supplier" and not joined_supplier:
+        query = query.join(PurchaseOrder.supplier)
+    if sort == "oldest":
+        query = query.order_by(PurchaseOrder.created_at.asc())
+    elif sort == "supplier":
+        query = query.order_by(Supplier.name)
+    else:
+        query = query.order_by(PurchaseOrder.created_at.desc())
+
+    items, total = paginate_query(query, page, page_size)
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size if page_size > 0 else total,
+        pages=total_pages(total, page_size),
     )
 
 

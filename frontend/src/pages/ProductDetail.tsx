@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
-import { ErrorState, LoadingSkeleton, PageCard, Table } from '../components';
+import { ErrorState, LoadingSkeleton, PageCard, PageHeader, Table } from '../components';
 import { useInventory } from '../hooks/useInventory';
 import { useProductDetail, useProductVariants, useStockMovements } from '../hooks/useEnterprise';
+import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
 import { formatCurrency, formatDate } from '../lib/utils';
 
 export function ProductDetailPage() {
@@ -11,7 +11,8 @@ export function ProductDetailPage() {
   const { data: product, isLoading, error } = useProductDetail(productId);
   const { data: variants } = useProductVariants(productId);
   const { data: movements } = useStockMovements(productId);
-  const { data: inventory } = useInventory();
+  const { data: inventoryData } = useInventory(undefined, { all: true });
+  const inventory = inventoryData?.items;
 
   const stock = inventory?.find((i) => i.product_id === productId);
 
@@ -20,11 +21,13 @@ export function ProductDetailPage() {
 
   return (
     <div>
-      <Link to="/listings" className="text-sm text-brand hover:underline">← Back to Listings</Link>
+      <PageHeader
+        title={product.name}
+        description={product.description || PAGE_DESCRIPTIONS.productDetail}
+        showDate={false}
+        backTo={{ label: 'Back to Listings', path: '/listings' }}
+      />
       <PageCard>
-        <h1 className="mb-2 text-xl font-bold">{product.name}</h1>
-        <p className="mb-6 text-sm text-gray-500">{product.description ?? 'No description'}</p>
-
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-xs text-gray-400">SKU</p>
