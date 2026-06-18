@@ -15,7 +15,7 @@ React · TypeScript · FastAPI · PostgreSQL · Resend
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-[Features](#features) · [Flows](#application-flows) · [Getting Started](#getting-started) · [API](#api-reference) · [Schema](#database-schema) · [Screenshots](#screenshots)
+[Features](#features) · [Flows](#application-flows) · [Getting Started](#getting-started) · [API](#api-reference) · [Schema](#database-schema)
 
 </div>
 
@@ -42,7 +42,6 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 - [Getting Started](#getting-started)
 - [API Reference](#api-reference)
 - [Database Schema](#database-schema)
-- [Screenshots](#screenshots)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
 - [License](#license)
@@ -50,10 +49,6 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 ---
 
 ## Features
-
-### Module overview
-
-![Ventorio Modules](docs/diagrams/modules-overview.svg)
 
 ### Core modules
 
@@ -73,8 +68,6 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 | **Legacy orders** | Original order/payment/shipment flows retained for compatibility |
 
 ### Role-based access
-
-![RBAC Roles](docs/diagrams/rbac-roles.svg)
 
 | Role | Typical use |
 |------|-------------|
@@ -129,11 +122,7 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 
 ## Application Flows
 
-Visual flow diagrams live in [`docs/diagrams/`](docs/diagrams/). They render inline on GitHub.
-
 ### System architecture
-
-![System Architecture](docs/diagrams/architecture.svg)
 
 ```mermaid
 flowchart LR
@@ -165,8 +154,6 @@ flowchart LR
 ---
 
 ### Authentication flow
-
-![Authentication Flow](docs/diagrams/auth-flow.svg)
 
 ```mermaid
 sequenceDiagram
@@ -208,8 +195,6 @@ flowchart TD
 
 ### Order lifecycle (legacy)
 
-![Order Lifecycle](docs/diagrams/order-flow.svg)
-
 ```mermaid
 stateDiagram-v2
     [*] --> Pending: Admin creates order
@@ -222,8 +207,6 @@ stateDiagram-v2
 ---
 
 ### Inventory & alerts
-
-![Inventory Flow](docs/diagrams/inventory-flow.svg)
 
 ```mermaid
 flowchart TD
@@ -242,8 +225,6 @@ flowchart TD
 ---
 
 ### App navigation map
-
-![App Navigation](docs/diagrams/app-navigation.svg)
 
 | Route | Page |
 |-------|------|
@@ -502,8 +483,6 @@ Full interactive docs: **http://localhost:8000/docs**
 
 ## Database Schema
 
-![ER Diagram (core tables)](docs/diagrams/er-diagram.svg)
-
 The v2 schema adds **30+ tables** across domains. Core relationships:
 
 ```mermaid
@@ -536,65 +515,11 @@ Migrations: `alembic/versions/001_initial.py` → `002_enterprise_features.py`
 
 ---
 
-## Screenshots
-
-UI mockups below are SVG illustrations. Replace with real PNG captures — see [`screenshots/README.md`](screenshots/README.md).
-
-<table>
-<tr>
-<td width="50%">
-
-**Dashboard**
-
-![Dashboard](screenshots/dashboard.svg)
-
-</td>
-<td width="50%">
-
-**Purchase Orders**
-
-![Purchases](screenshots/purchases.svg)
-
-</td>
-</tr>
-<tr>
-<td>
-
-**Login (5 demo accounts)**
-
-![Login](screenshots/login.svg)
-
-</td>
-<td>
-
-**Navigation & modules**
-
-![Modules](docs/diagrams/modules-overview.svg)
-
-</td>
-</tr>
-</table>
-
-> To capture real screenshots: start backend (`:8000`) + frontend (`:5173`), then save PNGs to `screenshots/` per the checklist.
-
----
-
 ## Project Structure
 
 ```
 inventory/
 ├── README.md
-├── docs/
-│   └── diagrams/              # SVG flow diagrams
-│       ├── architecture.svg
-│       ├── auth-flow.svg
-│       ├── order-flow.svg
-│       ├── inventory-flow.svg
-│       ├── app-navigation.svg
-│       ├── modules-overview.svg
-│       ├── rbac-roles.svg
-│       └── er-diagram.svg
-├── screenshots/               # UI mockups / PNG captures
 ├── backend/
 │   ├── alembic/versions/      # 001_initial, 002_enterprise_features
 │   ├── app/
@@ -630,7 +555,6 @@ inventory/
 |--------|---------|
 | `feature/` | `feature/barcode-scanner` |
 | `fix/` | `fix/po-receive-stock` |
-| `docs/` | `docs/readme-flows` |
 | `refactor/` | `refactor/stock-service` |
 
 ### Pull request checklist
@@ -640,8 +564,7 @@ inventory/
 - [ ] Migrations applied (`alembic upgrade head`)
 - [ ] Frontend builds (`npm run build`)
 - [ ] PR describes what and why
-- [ ] UI changes include screenshots
-- [ ] Flow/schema docs updated if architecture changed
+- [ ] README updated if architecture or API changed
 
 ---
 
