@@ -13,7 +13,6 @@ React · TypeScript · FastAPI · PostgreSQL · Resend
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?logo=postgresql&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?logo=tailwindcss&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
 
 [Features](#features) · [List views](#list-views-search-sort--pagination) · [Flows](#application-flows) · [Getting Started](#getting-started) · [API](#api-reference) · [Schema](#database-schema)
 
@@ -45,7 +44,6 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 - [Database Schema](#database-schema)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
-- [License](#license)
 
 ---
 
@@ -654,27 +652,3 @@ inventory/
 - [ ] Frontend builds (`npm run build`)
 - [ ] PR describes what and why
 - [ ] README updated if architecture or API changed
-
----
-
-## License
-
-MIT License — see [LICENSE](LICENSE) or the notice below.
-
-```
-MIT License — Copyright (c) 2026 Ventorio
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-```
