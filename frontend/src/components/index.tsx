@@ -761,12 +761,44 @@ function FilterLabelRow({
   onClear: () => void;
 }) {
   return (
-    <div className="mb-1 flex items-center justify-between gap-2">
+    <div className="mb-1 flex min-h-[1.25rem] items-center justify-between gap-2">
       <label className="text-xs text-gray-500">{label}</label>
       <FilterClearLink visible={showClear} onClear={onClear} />
     </div>
   );
 }
+
+function FilterField({
+  label,
+  hint,
+  showClear,
+  onClear,
+  className = '',
+  children,
+}: {
+  label: string;
+  hint?: string;
+  showClear: boolean;
+  onClear: () => void;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={className}>
+      <FilterLabelRow label={label} showClear={showClear} onClear={onClear} />
+      {children}
+      <p
+        className={`mt-1 min-h-[1rem] text-[11px] leading-4 ${hint ? 'text-gray-400' : 'invisible select-none'}`}
+        aria-hidden={!hint}
+      >
+        {hint || '\u00A0'}
+      </p>
+    </div>
+  );
+}
+
+const filterControlClassName =
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-brand focus:ring-1 focus:ring-brand/30';
 
 export function SearchInput({
   value,
@@ -774,32 +806,35 @@ export function SearchInput({
   placeholder = 'Search',
   className = '',
   label,
+  hint,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   className?: string;
   label?: string;
+  hint?: string;
 }) {
-  const inputClassName = label
-    ? 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-brand focus:ring-1 focus:ring-brand/30'
-    : 'min-w-0 flex-1 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-800 outline-none focus:border-brand focus:ring-1 focus:ring-brand/30';
-
   const input = (
     <input
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className={inputClassName}
+      className={label ? filterControlClassName : 'min-w-0 flex-1 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-800 outline-none focus:border-brand focus:ring-1 focus:ring-brand/30'}
     />
   );
 
   if (label) {
     return (
-      <div className={className}>
-        <FilterLabelRow label={label} showClear={Boolean(value)} onClear={() => onChange('')} />
+      <FilterField
+        label={label}
+        hint={hint}
+        showClear={Boolean(value)}
+        onClear={() => onChange('')}
+        className={className}
+      >
         {input}
-      </div>
+      </FilterField>
     );
   }
 
@@ -817,12 +852,14 @@ export function FilterInput({
   placeholder,
   className = '',
   label,
+  hint,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   className?: string;
   label?: string;
+  hint?: string;
 }) {
   return (
     <SearchInput
@@ -831,6 +868,7 @@ export function FilterInput({
       placeholder={placeholder}
       className={className}
       label={label}
+      hint={hint}
     />
   );
 }
@@ -840,6 +878,7 @@ export function SortSelect({
   onChange,
   options,
   label,
+  hint,
   defaultValue,
   className = '',
 }: {
@@ -847,6 +886,7 @@ export function SortSelect({
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
   label?: string;
+  hint?: string;
   defaultValue?: string;
   className?: string;
 }) {
@@ -857,11 +897,7 @@ export function SortSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={
-        label
-          ? 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900'
-          : 'min-w-0 flex-1 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-800'
-      }
+      className={label ? filterControlClassName : 'min-w-0 flex-1 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-800'}
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
@@ -871,10 +907,15 @@ export function SortSelect({
 
   if (label) {
     return (
-      <div className={className}>
-        <FilterLabelRow label={label} showClear={showClear} onClear={() => onChange(fallback)} />
+      <FilterField
+        label={label}
+        hint={hint}
+        showClear={showClear}
+        onClear={() => onChange(fallback)}
+        className={className}
+      >
         {select}
-      </div>
+      </FilterField>
     );
   }
 
@@ -923,26 +964,29 @@ export function DateFilterInput({
   hint,
   value,
   onChange,
+  className = '',
 }: {
   label: string;
   hint?: string;
   value: string;
   onChange: (v: string) => void;
+  className?: string;
 }) {
   return (
-    <div>
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <label className="text-xs text-gray-500">{label}</label>
-        <FilterClearLink visible={Boolean(value)} onClear={() => onChange('')} />
-      </div>
+    <FilterField
+      label={label}
+      hint={hint}
+      showClear={Boolean(value)}
+      onClear={() => onChange('')}
+      className={className}
+    >
       <input
         type="date"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
+        className={filterControlClassName}
       />
-      {hint && <p className="mt-1 text-[11px] text-gray-400">{hint}</p>}
-    </div>
+    </FilterField>
   );
 }
 

@@ -134,38 +134,40 @@ export function ReportsPage() {
 
         {activeTab === 'orders' && (
           <>
-            <div className="mb-4 flex flex-wrap items-end gap-3">
-              <div className="w-full sm:w-auto sm:min-w-[10rem]">
-                <DateFilterInput
-                  label="From date"
-                  hint="Include orders on and after this day"
-                  value={startDate}
-                  onChange={setStartDate}
-                />
-              </div>
-              <div className="w-full sm:w-auto sm:min-w-[10rem]">
-                <DateFilterInput
-                  label="Through date"
-                  hint="Include orders through end of this day"
-                  value={endDate}
-                  onChange={setEndDate}
-                />
-              </div>
+            <div className="mb-4 flex flex-wrap items-start gap-3">
+              <DateFilterInput
+                label="From date"
+                hint="Include orders on and after this day"
+                value={startDate}
+                onChange={setStartDate}
+                className="w-full sm:w-auto sm:min-w-[10rem]"
+              />
+              <DateFilterInput
+                label="Through date"
+                hint="Include orders through end of this day"
+                value={endDate}
+                onChange={setEndDate}
+                className="w-full sm:w-auto sm:min-w-[10rem]"
+              />
               <FilterInput
+                label="Search"
+                hint="Order #, supplier, status, or product"
                 value={orderSearch}
                 onChange={setOrderSearch}
                 placeholder="Order #, supplier, status, product..."
                 className="w-full sm:w-72"
               />
               <SortSelect
+                label="Sort by"
+                hint="Date or customer name"
                 value={orderSort}
                 onChange={(value) => setOrderSort(value as OrderSort)}
                 defaultValue="newest"
-                className="shrink-0"
+                className="w-full sm:w-44 shrink-0"
                 options={[
-                  { value: 'newest', label: 'Sort: Newest' },
-                  { value: 'oldest', label: 'Sort: Oldest' },
-                  { value: 'customer', label: 'Sort: Customer' },
+                  { value: 'newest', label: 'Newest first' },
+                  { value: 'oldest', label: 'Oldest first' },
+                  { value: 'customer', label: 'Customer A–Z' },
                 ]}
               />
             </div>
