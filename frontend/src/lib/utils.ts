@@ -8,9 +8,19 @@ export const SALES_CHANNELS = [
   'Rakuten',
 ] as const;
 
-export function getProductChannels(productId: number): string[] {
-  const count = (productId % 4) + 2;
-  return SALES_CHANNELS.filter((_, i) => (productId + i) % 3 !== 0).slice(0, count);
+export function getProductChannels(product: { channels?: string[] }): string[] {
+  return product.channels ?? [];
+}
+
+export function productOnChannel(product: { id: number; channels?: string[] }, channel: string): boolean {
+  return getProductChannels(product).includes(channel);
+}
+
+export function filterProductsByChannel<T extends { id: number; channels?: string[] }>(
+  products: T[],
+  channel: string,
+): T[] {
+  return products.filter((product) => productOnChannel(product, channel));
 }
 
 export function formatOrderId(id: number): string {

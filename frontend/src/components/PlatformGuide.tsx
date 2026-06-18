@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BookOpen, CheckCircle2 } from 'lucide-react';
 import { Accordion, PageCard } from '../components';
+import { FAVORITE_STAR_HELP, INVENTORY_FIND_GUIDE, INVENTORY_QUICK_ACTIONS } from '../lib/inventoryHelp';
 
 function GuideLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
@@ -158,8 +159,12 @@ const guideSections = [
             'Assign categories and SKUs',
             'Search, sort, and paginate the catalog',
             'Product detail view at /listings/:id',
+            'Favorites tab — star ⭐ any listing to pin it for quick access',
           ]}
         />
+        <p className="rounded-md border border-sky-100 bg-sky-50/50 px-3 py-2 text-xs text-gray-600">
+          <strong>Favorites:</strong> {FAVORITE_STAR_HELP}
+        </p>
       </div>
     ),
   },
@@ -181,6 +186,42 @@ const guideSections = [
             'Open Warehouses → click a warehouse for balances and transfer history.',
           ]}
         />
+        <p className="font-medium text-gray-800">Quick actions — where to find what you create</p>
+        <div className="overflow-x-auto rounded-md border border-gray-100">
+          <table className="min-w-full text-xs">
+            <thead>
+              <tr className="border-b bg-gray-50/80 text-left text-gray-500">
+                <th className="px-3 py-2 pr-4">Action</th>
+                <th className="px-3 py-2">Where it appears</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {(Object.keys(INVENTORY_QUICK_ACTIONS) as Array<keyof typeof INVENTORY_QUICK_ACTIONS>).map((id) => (
+                <tr key={id}>
+                  <td className="px-3 py-2 pr-4 font-medium text-gray-800">{INVENTORY_QUICK_ACTIONS[id].label}</td>
+                  <td className="px-3 py-2 text-gray-600">{INVENTORY_QUICK_ACTIONS[id].where}</td>
+                </tr>
+              ))}
+              <tr>
+                <td className="px-3 py-2 pr-4 font-medium text-gray-800">Favorites ⭐</td>
+                <td className="px-3 py-2 text-gray-600">
+                  Star any row, then open <GuideLink to="/inventory">Inventory</GuideLink> or{' '}
+                  <GuideLink to="/listings">Listings</GuideLink> → Favorites tab
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ul className="space-y-1 text-xs text-gray-500">
+          {INVENTORY_FIND_GUIDE.map(({ action, destination }) => (
+            <li key={action}>
+              <strong>{action}:</strong> {destination}
+            </li>
+          ))}
+        </ul>
+        <p className="rounded-md border border-sky-100 bg-sky-50/50 px-3 py-2 text-xs text-gray-600">
+          Hover the <strong>ⓘ info icon</strong> on each quick-action card or beside the star in a table row for the same tips in context.
+        </p>
         <FeatureList
           items={[
             'Stock adjustment with reason',

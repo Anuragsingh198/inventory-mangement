@@ -32,6 +32,7 @@ from app.schemas.sales import (
     SalesOrderCreate, SalesOrderUpdate, SalesOrderResponse,
     CustomerInvoiceCreate, CustomerInvoiceResponse,
 )
+from app.schemas.sales_channel import ChannelListingCreate, SalesChannelResponse, SalesChannelSummaryResponse
 from app.schemas.batch import BatchCreate, BatchResponse, SerialNumberCreate, SerialNumberResponse
 from app.schemas.audit import (
     InventoryAuditCreate, InventoryAuditUpdate, InventoryAuditResponse,
@@ -65,6 +66,7 @@ __all__ = [
     "CustomerCreate", "CustomerUpdate", "CustomerResponse",
     "SalesOrderCreate", "SalesOrderUpdate", "SalesOrderResponse",
     "CustomerInvoiceCreate", "CustomerInvoiceResponse", "SalesOrderStatus",
+    "SalesChannelResponse", "SalesChannelSummaryResponse", "ChannelListingCreate",
     "BatchCreate", "BatchResponse", "SerialNumberCreate", "SerialNumberResponse",
     "InventoryAuditCreate", "InventoryAuditUpdate", "InventoryAuditResponse",
     "InventoryAuditLineCreate", "InventoryAuditLineResponse", "ActivityLogResponse", "AuditStatus",

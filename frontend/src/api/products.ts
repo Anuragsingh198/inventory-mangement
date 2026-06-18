@@ -11,6 +11,7 @@ export async function getProducts(
   page = 1,
   pageSize = PAGE_SIZE,
   all = false,
+  channel?: string,
 ): Promise<Paginated<Product>> {
   const params: Record<string, string | number> = {
     sort,
@@ -19,6 +20,7 @@ export async function getProducts(
   };
   if (search) params.search = search;
   if (categoryId) params.category_id = categoryId;
+  if (channel) params.channel = channel;
   const { data } = await apiClient.get<Paginated<Product>>('/products', { params });
   return data;
 }

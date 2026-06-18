@@ -17,7 +17,7 @@ from app.schemas import (
     StockMovementResponse,
 )
 from app.services.audit_service import log_activity
-from app.services.stock_movement_service import StockMovementService, get_or_create_default_warehouse
+from app.services.stock_movement_service import StockMovementService, get_or_create_balance, get_or_create_default_warehouse
 from app.services.alert_service import check_and_create_stock_alert
 from app.schemas.common import PaginatedResponse
 from app.utils.pagination import paginate_query, total_pages
@@ -136,6 +136,10 @@ def create_inventory(
     if existing:
         raise HTTPException(status_code=400, detail="Inventory already exists for this product")
 
+    product = db.query(Product).filter(Product.id == inventory_in.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
     warehouse = get_or_create_default_warehouse(db)
     wh_id = inventory_in.warehouse_id or warehouse.id
 
@@ -149,21 +153,39 @@ def create_inventory(
             reason="Initial stock",
             user=current_user,
         )
+    else:
+        get_or_create_balance(
+            db,
+            inventory_in.product_id,
+            wh_id,
+            inventory_in.min_threshold,
+        )
+        item = Inventory(
+            product_id=inventory_in.product_id,
+            quantity=0,
+            min_threshold=inventory_in.min_threshold,
+            location=inventory_in.location,
+        )
+        db.add(item)
+        db.flush()
 
     item = db.query(Inventory).filter(Inventory.product_id == inventory_in.product_id).first()
-    if item:
-        item.min_threshold = inventory_in.min_threshold
-        item.location = inventory_in.location
-        item.last_updated = datetime.now(timezone.utc)
-        check_and_create_stock_alert(db, item)
+    if not item:
+        raise HTTPException(status_code=500, detail="Failed to create inventory item")
 
-    log_activity(db, user=current_user, action="create", entity_type="inventory", entity_id=item.id if item else None)
+    item.min_threshold = inventory_in.min_threshold
+    if inventory_in.location is not None:
+        item.location = inventory_in.location
+    item.last_updated = datetime.now(timezone.utc)
+    check_and_create_stock_alert(db, item)
+
+    log_activity(db, user=current_user, action="create", entity_type="inventory", entity_id=item.id)
     db.commit()
 
     item = (
         db.query(Inventory)
         .options(joinedload(Inventory.product).joinedload(Product.category))
-        .filter(Inventory.product_id == inventory_in.product_id)
+        .filter(Inventory.id == item.id)
         .first()
     )
     return item

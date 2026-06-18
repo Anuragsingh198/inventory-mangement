@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, Pencil, Star, Trash2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, Info, Pencil, Star, Trash2 } from 'lucide-react';
 import { usePageSize } from '../context/PageSizeContext';
 
 interface TableProps {
@@ -422,7 +422,46 @@ export function Badge({ children, variant = 'default' }: BadgeProps) {
 
 export function ChannelLink({ name }: { name: string }) {
   return (
-    <span className="cursor-pointer text-sm text-brand hover:underline">{name}</span>
+    <Link to={`/listings?channel=${encodeURIComponent(name)}`} className="text-sm text-brand hover:underline">
+      {name}
+    </Link>
+  );
+}
+
+export function InfoTip({
+  label = 'More info',
+  children,
+  className = '',
+  align = 'center',
+}: {
+  label?: string;
+  children: ReactNode;
+  className?: string;
+  align?: 'left' | 'center' | 'right';
+}) {
+  const id = useId();
+  const alignClass =
+    align === 'left' ? 'left-0' : align === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2';
+
+  return (
+    <div className={`group relative inline-flex ${className}`}>
+      <button
+        type="button"
+        aria-describedby={id}
+        className="rounded-full text-gray-400 transition hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <Info className="h-4 w-4" aria-hidden />
+        <span className="sr-only">{label}</span>
+      </button>
+      <div
+        id={id}
+        role="tooltip"
+        className={`pointer-events-none absolute bottom-full z-20 mb-2 hidden w-56 rounded-lg border border-gray-200 bg-white p-3 text-left shadow-lg group-hover:block group-focus-within:block ${alignClass}`}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -431,18 +470,27 @@ export function RowActions({
   onDelete,
   onStar,
   starred = false,
+  starHint,
 }: {
   onEdit?: () => void;
   onDelete?: () => void;
   onStar?: () => void;
   starred?: boolean;
+  starHint?: string;
 }) {
   return (
-    <div className="flex items-center gap-3 text-gray-400">
+    <div className="flex items-center gap-2 text-gray-400">
       {onStar && (
-        <button type="button" onClick={onStar} className={starred ? 'text-accent-amber' : 'hover:text-accent-amber'}>
-          <Star className={`h-4 w-4 ${starred ? 'fill-accent-amber text-accent-amber' : ''}`} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={onStar} className={starred ? 'text-accent-amber' : 'hover:text-accent-amber'}>
+            <Star className={`h-4 w-4 ${starred ? 'fill-accent-amber text-accent-amber' : ''}`} />
+          </button>
+          {starHint && (
+            <InfoTip label="About favorites" align="right">
+              <p className="text-xs leading-relaxed text-gray-600">{starHint}</p>
+            </InfoTip>
+          )}
+        </div>
       )}
       {onEdit && (
         <button type="button" onClick={onEdit} className="hover:text-brand">

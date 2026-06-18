@@ -17,6 +17,7 @@ from app.routers import (
     purchases,
     reports,
     sales,
+    sales_channels,
     suppliers,
     warehouses,
 )
@@ -43,6 +44,7 @@ app.include_router(warehouses.router)
 app.include_router(suppliers.router)
 app.include_router(purchases.router)
 app.include_router(sales.router)
+app.include_router(sales_channels.router)
 app.include_router(batches.router)
 app.include_router(audits.router)
 app.include_router(ai.router)

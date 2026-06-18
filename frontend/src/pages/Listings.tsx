@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import type { ProductSort } from '../api/products';
 import {
   ChannelLink,
@@ -15,6 +15,7 @@ import {
   PrimaryButton,
   RowActions,
   SortSelect,
+  TabBar,
   Table,
   TableArea,
 } from '../components';
@@ -25,8 +26,10 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useInventory } from '../hooks/useInventory';
 import { useCategories, useProductMutations, useProducts } from '../hooks/useProducts';
 import { useResetPageOnFilterChange } from '../hooks/useResetPageOnFilterChange';
+import { usePagination } from '../hooks/usePagination';
 import { PAGE_DESCRIPTIONS } from '../lib/pageMeta';
 import { getFavorites, isFavorite, toggleFavorite } from '../lib/favorites';
+import { FAVORITE_STAR_HELP } from '../lib/inventoryHelp';
 import {
   formatOrderId,
   getProductChannels,
@@ -43,9 +46,12 @@ const emptyForm: ProductCreate = {
   image_url: '',
 };
 
+type ListingsTab = 'all' | 'favorites';
+
 export function ListingsPage() {
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
   const [search, setSearch] = useState(params.get('search') ?? '');
@@ -56,12 +62,28 @@ export function ListingsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<ProductCreate>(emptyForm);
   const [favoriteIds, setFavoriteIds] = useState<number[]>(() => getFavorites());
+  const [listTab, setListTab] = useState<ListingsTab>('all');
+  const categoryFilter = params.get('category');
+  const categoryId = categoryFilter ? Number(categoryFilter) : undefined;
+  const channelFilter = params.get('channel') ?? undefined;
+  const isChannelView = listTab === 'all' && !!channelFilter;
 
   const { pageSize } = usePageSize();
   const debouncedSearch = useDebouncedValue(search.trim(), 300) || undefined;
-  useResetPageOnFilterChange(setPage, [debouncedSearch, sort, pageSize]);
+  useResetPageOnFilterChange(setPage, [debouncedSearch, sort, pageSize, listTab, categoryId, channelFilter]);
 
-  const { data, isLoading, isFetching, error } = useProducts(debouncedSearch, undefined, sort, { page, pageSize });
+  const { data, isLoading, isFetching, error } = useProducts(
+    debouncedSearch,
+    categoryId,
+    sort,
+    { page, pageSize, channel: channelFilter },
+  );
+  const { data: allProductsData, isLoading: allProductsLoading } = useProducts(
+    undefined,
+    categoryId,
+    sort,
+    { all: true },
+  );
   const { data: categories } = useCategories();
   const { data: inventoryData } = useInventory(undefined, { all: true });
   const { create, update, remove } = useProductMutations();
@@ -70,14 +92,40 @@ export function ListingsPage() {
   const total = data?.total ?? 0;
   const pages = data?.pages ?? 1;
 
+  const favoriteProducts = useMemo(() => {
+    const ids = new Set(favoriteIds);
+    let items = (allProductsData?.items ?? []).filter((product) => ids.has(product.id));
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      items = items.filter(
+        (product) =>
+          product.name.toLowerCase().includes(q)
+          || product.sku.toLowerCase().includes(q)
+          || String(product.id).includes(q)
+          || product.description?.toLowerCase().includes(q),
+      );
+    }
+    return items;
+  }, [allProductsData, favoriteIds, debouncedSearch]);
+
+  const {
+    page: favPage,
+    pages: favPages,
+    paged: pagedFavorites,
+    setPage: setFavPage,
+    total: favoritesTotal,
+  } = usePagination(favoriteProducts, `listings-favorites-${favoriteIds.join(',')}-${debouncedSearch ?? ''}`, pageSize);
+
   const qtyMap = useMemo(() => {
     const map = new Map<number, number>();
     inventoryData?.items.forEach((item) => map.set(item.product_id, item.quantity));
     return map;
   }, [inventoryData]);
 
-  const showTableSkeleton = isLoading && !data;
-  const tableLoading = isFetching && !showTableSkeleton;
+  const showTableSkeleton = listTab === 'all' ? isLoading && !data : allProductsLoading && !allProductsData;
+  const tableLoading = listTab === 'all' ? isFetching && !showTableSkeleton : false;
+
+  const tableProducts = listTab === 'favorites' ? pagedFavorites : products;
 
   const openCreate = () => {
     setEditing(null);
@@ -135,7 +183,7 @@ export function ListingsPage() {
   const handleStar = (productId: number) => {
     const starred = toggleFavorite(productId);
     setFavoriteIds(getFavorites());
-    showToast(starred ? 'Added to favorites' : 'Removed from favorites', 'success');
+    showToast(starred ? 'Added to favorites — see Favorites tab' : 'Removed from favorites', 'success');
   };
 
   if (error && !data) return <ErrorState message="Failed to load listings" />;
@@ -149,11 +197,46 @@ export function ListingsPage() {
       />
 
       <PageCard>
+        <TabBar
+          active={listTab}
+          onChange={setListTab}
+          tabs={[
+            {
+              id: 'all',
+              label: 'All Listings',
+              count: isChannelView ? total : listTab === 'all' ? total : data?.total,
+            },
+            { id: 'favorites', label: 'Favorites', count: favoriteIds.length || undefined },
+          ]}
+        />
+
         <TableArea loading={tableLoading}>
           {showTableSkeleton ? (
             <LoadingSkeleton rows={6} />
+          ) : listTab === 'favorites' && favoriteIds.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-400">
+              No favorites yet. Star ⭐ any listing to add it here.
+            </p>
+          ) : listTab === 'all' && isChannelView && products.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-400">
+              No listings found on {channelFilter}.
+            </p>
           ) : (
             <>
+        {channelFilter && listTab === 'all' && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-gray-700">
+            <span>
+              Showing listings on <strong>{channelFilter}</strong> ({total} total)
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate('/listings')}
+              className="text-brand hover:underline"
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <FilterInput
             value={search}
@@ -174,8 +257,8 @@ export function ListingsPage() {
           />
         </div>
         <Table headers={['ID', '', 'Product Name', 'QTY', 'Active Listings', 'Action']}>
-          {products.map((product) => {
-            const channels = getProductChannels(product.id);
+          {tableProducts.map((product) => {
+            const channels = getProductChannels(product);
             return (
               <tr key={product.id} className="hover:bg-gray-50/50">
                 <td className="px-4 py-4 text-sm text-gray-500">{formatOrderId(product.id)}</td>
@@ -210,6 +293,7 @@ export function ListingsPage() {
                       onDelete={() => setDeleteId(product.id)}
                       onStar={() => handleStar(product.id)}
                       starred={isFavorite(product.id) || favoriteIds.includes(product.id)}
+                      starHint={FAVORITE_STAR_HELP}
                     />
                   )}
                 </td>
@@ -218,7 +302,11 @@ export function ListingsPage() {
           })}
         </Table>
 
-        <Pagination page={page} total={pages} onChange={setPage} totalItems={total} />
+        {listTab === 'favorites' ? (
+          <Pagination page={favPage} total={favPages} onChange={setFavPage} totalItems={favoritesTotal} />
+        ) : (
+          <Pagination page={page} total={pages} onChange={setPage} totalItems={total} />
+        )}
             </>
           )}
         </TableArea>

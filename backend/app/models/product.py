@@ -45,6 +45,11 @@ class Product(Base):
     alerts: Mapped[list["StockAlert"]] = relationship("StockAlert", back_populates="product")
     batches: Mapped[list["Batch"]] = relationship("Batch", back_populates="product")
     serial_numbers: Mapped[list["SerialNumber"]] = relationship("SerialNumber", back_populates="product")
+    channel_listings: Mapped[list["ProductChannelListing"]] = relationship(
+        "ProductChannelListing",
+        back_populates="product",
+        cascade="all, delete-orphan",
+    )
 
 
 class ProductVariant(Base):

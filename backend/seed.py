@@ -33,6 +33,8 @@ from app.models import (
     SalesOrder,
     SalesOrderLine,
     SalesOrderStatus,
+    SalesChannel,
+    ProductChannelListing,
     SerialNumber,
     SerialStatus,
     StockMovement,
@@ -487,6 +489,28 @@ def _seed_activity(db, admin):
         print("Created login history")
 
 
+def _seed_sales_channels(db, products):
+    channel_names = ["Aliexpress", "eBay", "Amazon", "Walmart", "Etsy", "Wayfair", "Rakuten"]
+    if db.query(SalesChannel).count() > 0:
+        return db.query(SalesChannel).order_by(SalesChannel.id).all()
+
+    channels = []
+    for name in channel_names:
+        channel = SalesChannel(name=name, slug=name.lower().replace(" ", "-"), is_active=True, created_at=NOW())
+        db.add(channel)
+        channels.append(channel)
+    db.flush()
+    print(f"Created {len(channels)} sales channels")
+
+    for product in products:
+        count = (product.id % 4) + 2
+        channel_indexes = [i for i in range(len(channels)) if (product.id + i) % 3 != 0][:count]
+        for index in channel_indexes:
+            db.add(ProductChannelListing(product_id=product.id, channel_id=channels[index].id, is_active=True))
+    print("Created product channel listings")
+    return channels
+
+
 def _seed_notifications(db):
     if db.query(NotificationDelivery).count() > 0:
         return
@@ -525,6 +549,7 @@ def seed():
         _seed_serials(db, products, main_wh)
         _seed_transfers(db, warehouses, products, admin)
         _seed_audits(db, main_wh, products, admin)
+        _seed_sales_channels(db, products)
         _seed_activity(db, admin)
         _seed_notifications(db)
 

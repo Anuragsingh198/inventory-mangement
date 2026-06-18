@@ -61,6 +61,7 @@ export interface Product {
   weight?: number | null;
   created_at: string;
   category?: Category;
+  channels?: string[];
 }
 
 export interface InventoryItem {

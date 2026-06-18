@@ -59,6 +59,7 @@ class ProductResponse(ProductBase):
     qr_code: str | None = None
     created_at: datetime
     category: CategoryResponse | None = None
+    channels: list[str] = []
 
 
 class ProductVariantCreate(BaseModel):
