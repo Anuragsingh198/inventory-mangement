@@ -1,6 +1,6 @@
 export const PAGE_DESCRIPTIONS = {
   dashboard: 'Your inventory command center — track stock, orders, and alerts at a glance.',
-  guide: 'Learn how every module works, which demo role to use, and step-by-step workflows.',
+  guide: 'User guide — what each part of Ventorio does and how to get started.',
   listings: 'Browse and manage your product catalog — SKUs, pricing, images, and channel listings.',
   inventory: 'Monitor stock levels, thresholds, and warehouses. Adjust quantities and track low-stock items.',
   warehouses: 'View warehouse locations, capacity, and how inventory is distributed across sites.',

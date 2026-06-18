@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BookOpen, CheckCircle2 } from 'lucide-react';
 import { Accordion, PageCard } from '../components';
-import { FAVORITE_STAR_HELP, INVENTORY_FIND_GUIDE, INVENTORY_QUICK_ACTIONS } from '../lib/inventoryHelp';
+import { FAVORITE_STAR_HELP, INVENTORY_QUICK_ACTIONS } from '../lib/inventoryHelp';
 
 function GuideLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
@@ -38,131 +38,116 @@ const guideSections = [
   {
     id: 'getting-started',
     title: 'Getting started',
-    summary: 'First steps to use Ventorio in this demo environment',
+    summary: 'How to navigate Ventorio and try the demo',
     content: (
       <div className="space-y-3">
         <p>
-          Ventorio is an inventory management platform for products, warehouses, procurement, sales, and reporting.
-          This is a <strong>demo environment</strong> with sample data already loaded.
+          Ventorio helps you manage products, stock, purchasing, sales, and reports in one place.
+          This demo is pre-loaded with sample data so you can explore right away.
         </p>
         <StepList
           steps={[
-            'Use the sidebar on the left to move between modules.',
-            'Start on this Dashboard to see KPIs, charts, and alerts.',
-            'Try different demo accounts (see Roles below) to see how permissions change the UI.',
-            'Click any blue link below to jump directly to a module.',
+            'Use the sidebar to open any area — Dashboard, Listings, Inventory, and more.',
+            'Start on the Dashboard for a quick overview of stock, orders, and alerts.',
+            'Sign in with different demo roles to see how access changes what you can do.',
+            'Click any blue link in this guide to jump straight to that page.',
           ]}
         />
-        <p className="rounded-md bg-surface px-3 py-2 text-xs text-gray-500">
-          Tip: Collapse this guide anytime — expand a section when you need help with that area.
+        <p className="rounded-md bg-surface px-3 py-2 text-sm text-gray-600">
+          Tip: Expand only the sections you need — each one explains what that part of the app is for.
         </p>
       </div>
     ),
   },
   {
     id: 'dashboard',
-    title: 'How this dashboard works',
-    summary: 'What the KPI cards, charts, and alerts mean',
+    title: 'Dashboard',
+    summary: 'Your overview of stock, orders, and alerts',
     content: (
       <div className="space-y-3">
-        <p>The dashboard pulls live data from your inventory database and updates when you refresh or navigate back here.</p>
-        <ul className="space-y-2">
-          <li>
-            <strong>Total Products</strong> — number of products in your catalog (
-            <GuideLink to="/listings">Listings</GuideLink>).
-          </li>
-          <li>
-            <strong>Low Stock</strong> — items below their minimum threshold. Click alerts below or go to{' '}
-            <GuideLink to="/notifications">Notifications</GuideLink>.
-          </li>
-          <li>
-            <strong>Pending Orders</strong> — legacy orders awaiting action (
-            <GuideLink to="/orders">Orders</GuideLink>).
-          </li>
-          <li>
-            <strong>Stock Value</strong> — total value of inventory on hand (quantity × price).
-          </li>
+        <p>
+          The <GuideLink to="/dashboard">Dashboard</GuideLink> shows live numbers and charts so you can spot issues quickly.
+        </p>
+        <ul className="space-y-2 text-sm">
+          <li><strong>Total Products</strong> — how many items are in your catalog.</li>
+          <li><strong>Low Stock</strong> — products running below their minimum level.</li>
+          <li><strong>Pending Orders</strong> — orders still waiting to be completed.</li>
+          <li><strong>Stock Value</strong> — total value of everything you have on hand.</li>
         </ul>
         <p>
-          <strong>Charts on this page:</strong> warehouse value breakdown, fulfillment aging, top products by stock,
-          revenue/cost trends, and units sold. For exportable reports, open{' '}
-          <GuideLink to="/reports">Reports</GuideLink>.
-        </p>
-        <p>
-          <strong>Recent Alerts</strong> — unread low-stock or out-of-stock warnings. Mark as read or configure email
-          delivery in <GuideLink to="/notifications">Notifications</GuideLink>.
+          Charts show trends such as top products, channel breakdown, and revenue. Recent alerts highlight
+          items that need attention — open <GuideLink to="/notifications">Notifications</GuideLink> to review them all.
         </p>
       </div>
     ),
   },
   {
     id: 'roles',
-    title: 'Demo accounts & roles',
-    summary: 'Five logins — each role sees different actions',
+    title: 'Demo sign-in accounts',
+    summary: 'Try different roles to see what each user can do',
     content: (
       <div className="space-y-3">
-        <p>Log out and sign in with a different account to experience role-based access.</p>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-xs">
+        <p>
+          Log out and sign in again with another account. On the login page, use the quick role buttons
+          or enter the email and password below.
+        </p>
+        <div className="overflow-x-auto rounded-lg border border-gray-100">
+          <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-gray-500">
-                <th className="pb-2 pr-4">Email</th>
-                <th className="pb-2 pr-4">Password</th>
-                <th className="pb-2">What they can do</th>
+              <tr className="border-b bg-gray-50/80 text-left text-gray-500">
+                <th className="px-3 py-2">Role</th>
+                <th className="px-3 py-2">What you can do</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               <tr>
-                <td className="py-2 pr-4 font-mono">admin@inventory.com</td>
-                <td className="py-2 pr-4">admin123</td>
-                <td className="py-2">Full access — all modules and actions</td>
+                <td className="px-3 py-2 font-medium">Admin</td>
+                <td className="px-3 py-2 text-gray-600">Full access — create, edit, approve, and view everything.</td>
               </tr>
               <tr>
-                <td className="py-2 pr-4 font-mono">manager@inventory.com</td>
-                <td className="py-2 pr-4">manager123</td>
-                <td className="py-2">Products, suppliers, purchase orders, audits, warehouses</td>
+                <td className="px-3 py-2 font-medium">Manager</td>
+                <td className="px-3 py-2 text-gray-600">Manage products, suppliers, purchase orders, and warehouses.</td>
               </tr>
               <tr>
-                <td className="py-2 pr-4 font-mono">warehouse@inventory.com</td>
-                <td className="py-2 pr-4">warehouse123</td>
-                <td className="py-2">Adjust stock, receive POs, fulfill sales, transfers</td>
+                <td className="px-3 py-2 font-medium">Warehouse</td>
+                <td className="px-3 py-2 text-gray-600">Adjust stock, receive purchases, and fulfill sales orders.</td>
               </tr>
               <tr>
-                <td className="py-2 pr-4 font-mono">sales@inventory.com</td>
-                <td className="py-2 pr-4">sales123</td>
-                <td className="py-2">Customers, sales orders, read inventory</td>
+                <td className="px-3 py-2 font-medium">Sales</td>
+                <td className="px-3 py-2 text-gray-600">Work with customers and sales orders; view stock levels.</td>
               </tr>
               <tr>
-                <td className="py-2 pr-4 font-mono">viewer@inventory.com</td>
-                <td className="py-2 pr-4">viewer123</td>
-                <td className="py-2">Read-only — no create, edit, or approve buttons</td>
+                <td className="px-3 py-2 font-medium">Viewer</td>
+                <td className="px-3 py-2 text-gray-600">Look only — no create, edit, or approve buttons.</td>
               </tr>
             </tbody>
           </table>
         </div>
+        <p className="text-sm text-gray-500">
+          Demo passwords follow the pattern <em>role123</em> (for example, admin123 for Admin). Hover a role button on the login page for details.
+        </p>
       </div>
     ),
   },
   {
     id: 'listings',
-    title: 'Product catalog (Listings)',
-    summary: 'Create and manage products, SKUs, categories',
+    title: 'Listings (product catalog)',
+    summary: 'Browse, search, and manage your products',
     content: (
       <div className="space-y-3">
         <p>
-          Go to <GuideLink to="/listings">Listings</GuideLink> to browse, search, and filter products. Click a product
-          name to open its <strong>detail page</strong> with variants and barcodes.
+          <GuideLink to="/listings">Listings</GuideLink> is your product catalog. Search by name, SKU, or ID;
+          sort by name, price, or quantity; and open any product for full details.
         </p>
         <FeatureList
           items={[
-            'Create / edit / delete products (admin & manager)',
-            'Assign categories and SKUs',
-            'Search, sort, and paginate the catalog',
-            'Product detail view at /listings/:id',
-            'Favorites tab — star ⭐ any listing to pin it for quick access',
+            'Create and edit products with name, SKU, category, price, and image',
+            'See which sales channels each product is listed on',
+            'Use the Favorites tab to keep important products in one place',
+            'Filter by marketplace when you arrive from Sales Channels',
           ]}
         />
-        <p className="rounded-md border border-sky-100 bg-sky-50/50 px-3 py-2 text-xs text-gray-600">
+        <p className="rounded-md border border-sky-100 bg-sky-50/50 px-3 py-2 text-sm text-gray-600">
           <strong>Favorites:</strong> {FAVORITE_STAR_HELP}
         </p>
       </div>
@@ -170,29 +155,21 @@ const guideSections = [
   },
   {
     id: 'inventory',
-    title: 'Inventory & warehouses',
-    summary: 'Stock levels, adjustments, multi-warehouse',
+    title: 'Inventory',
+    summary: 'Track quantities, groups, prices, and favorites',
     content: (
       <div className="space-y-3">
         <p>
-          <GuideLink to="/inventory">Inventory</GuideLink> shows quantity, thresholds, and locations.{' '}
-          <GuideLink to="/warehouses">Warehouses</GuideLink> manages multiple storage locations and transfers.
+          <GuideLink to="/inventory">Inventory</GuideLink> shows how much stock you have, where it sits, and when levels are low.
+          Use the tabs for Items, Favorites, Item Groups, and Price List.
         </p>
-        <StepList
-          steps={[
-            'Open Inventory → use Quick Actions to add items or export barcodes.',
-            'Click Adjust on a row to increase/decrease stock (requires write permission).',
-            'When stock drops below threshold, alerts appear on Dashboard and Notifications.',
-            'Open Warehouses → click a warehouse for balances and transfer history.',
-          ]}
-        />
-        <p className="font-medium text-gray-800">Quick actions — where to find what you create</p>
-        <div className="overflow-x-auto rounded-md border border-gray-100">
-          <table className="min-w-full text-xs">
+        <p className="font-medium text-gray-800">Quick actions at the top</p>
+        <div className="overflow-x-auto rounded-lg border border-gray-100">
+          <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b bg-gray-50/80 text-left text-gray-500">
                 <th className="px-3 py-2 pr-4">Action</th>
-                <th className="px-3 py-2">Where it appears</th>
+                <th className="px-3 py-2">Where to find it after saving</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -203,31 +180,63 @@ const guideSections = [
                 </tr>
               ))}
               <tr>
-                <td className="px-3 py-2 pr-4 font-medium text-gray-800">Favorites ⭐</td>
+                <td className="px-3 py-2 pr-4 font-medium text-gray-800">Favorites</td>
                 <td className="px-3 py-2 text-gray-600">
-                  Star any row, then open <GuideLink to="/inventory">Inventory</GuideLink> or{' '}
-                  <GuideLink to="/listings">Listings</GuideLink> → Favorites tab
+                  Star any row, then open the Favorites tab on Inventory or Listings
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <ul className="space-y-1 text-xs text-gray-500">
-          {INVENTORY_FIND_GUIDE.map(({ action, destination }) => (
-            <li key={action}>
-              <strong>{action}:</strong> {destination}
-            </li>
-          ))}
-        </ul>
-        <p className="rounded-md border border-sky-100 bg-sky-50/50 px-3 py-2 text-xs text-gray-600">
-          Hover the <strong>ⓘ info icon</strong> on each quick-action card or beside the star in a table row for the same tips in context.
+        <p className="text-sm text-gray-500">
+          Tap the <strong>ⓘ</strong> icon on a quick-action card or beside the star in a table for short tips.
         </p>
         <FeatureList
           items={[
-            'Stock adjustment with reason',
-            'Low-stock & critical alerts (in-app + optional email)',
-            'Multi-warehouse balances',
-            'Warehouse detail pages at /warehouses/:id',
+            'Adjust stock up or down and add a reason',
+            'Get alerts when quantity falls below the minimum',
+            'View and manage item groups (categories)',
+            'Export barcodes as a spreadsheet file',
+          ]}
+        />
+      </div>
+    ),
+  },
+  {
+    id: 'warehouses',
+    title: 'Warehouses',
+    summary: 'Multiple locations and stock transfers',
+    content: (
+      <div className="space-y-3">
+        <p>
+          <GuideLink to="/warehouses">Warehouses</GuideLink> lets you manage more than one storage location.
+          Open any warehouse to see what is stored there and review transfer history.
+        </p>
+        <FeatureList
+          items={[
+            'See stock held at each warehouse',
+            'Move inventory between locations',
+            'Review balances and recent activity per site',
+          ]}
+        />
+      </div>
+    ),
+  },
+  {
+    id: 'sales-channels',
+    title: 'Sales channels',
+    summary: 'Marketplaces where your products are listed',
+    content: (
+      <div className="space-y-3">
+        <p>
+          <GuideLink to="/sales-channels">Sales Channels</GuideLink> shows connected marketplaces such as Amazon, eBay, and Etsy.
+          Each card displays how many listings you have and estimated revenue on that channel.
+        </p>
+        <StepList
+          steps={[
+            'Click a channel card to see only the products listed there.',
+            'Use Connect Channel to pick a marketplace from the list.',
+            'In Listings, channel names are clickable — tap one to filter by that marketplace.',
           ]}
         />
       </div>
@@ -235,27 +244,20 @@ const guideSections = [
   },
   {
     id: 'procurement',
-    title: 'Procurement (Suppliers & purchase orders)',
-    summary: 'Approve POs and receive stock into inventory',
+    title: 'Purchasing & suppliers',
+    summary: 'Buy from vendors and receive stock',
     content: (
       <div className="space-y-3">
         <p>
-          Manage vendors in <GuideLink to="/suppliers">Suppliers</GuideLink> and track buying in{' '}
+          Keep vendor details in <GuideLink to="/suppliers">Suppliers</GuideLink> and raise orders in{' '}
           <GuideLink to="/purchases">Purchase Orders</GuideLink>.
         </p>
         <StepList
           steps={[
-            'Manager: open Purchase Orders → find a pending PO → click Approve.',
-            'Warehouse or manager: open an approved PO → click Receive Stock — inventory increases automatically.',
-            'Click View on any PO row for line items and full details.',
-          ]}
-        />
-        <FeatureList
-          items={[
-            'Supplier directory + detail pages',
-            'PO lifecycle: pending → approved → received',
-            'Receive stock updates inventory via StockMovementService',
-            'Legacy orders still available under Procurement → Legacy Orders',
+            'Create or review a purchase order with the items you need.',
+            'A manager approves the order when ready.',
+            'Warehouse staff receive the goods — stock in Inventory updates automatically.',
+            'Open any order to see line items and full history.',
           ]}
         />
       </div>
@@ -263,143 +265,114 @@ const guideSections = [
   },
   {
     id: 'sales',
-    title: 'Sales orders & fulfillment',
-    summary: 'Customers, sales orders, payments, shipments',
+    title: 'Sales orders',
+    summary: 'Customer orders from confirmation to fulfillment',
     content: (
       <div className="space-y-3">
         <p>
-          <GuideLink to="/sales">Sales Orders</GuideLink> handles customer orders.{' '}
-          <GuideLink to="/payments">Payments</GuideLink> and <GuideLink to="/shipments">Shipments</GuideLink> cover
-          legacy payment and shipping views.
+          <GuideLink to="/sales">Sales Orders</GuideLink> tracks what customers have ordered.
+          <GuideLink to="/payments">Payments</GuideLink> and <GuideLink to="/shipments">Shipments</GuideLink> help you follow payment and delivery status.
         </p>
         <StepList
           steps={[
-            'Browse sales orders and open a confirmed order.',
-            'Warehouse staff: click Fulfill Order — stock is deducted from inventory.',
-            'View customer details and line items on the sales order detail page.',
-          ]}
-        />
-        <FeatureList
-          items={[
-            'Customer management',
-            'Sales order detail at /sales/:id',
-            'Fulfillment deducts stock automatically',
-            'Sales channels overview at /sales-channels',
+            'Browse open and completed sales orders.',
+            'Open an order to see the customer and each line item.',
+            'Fulfill an order when ready to ship — stock is reduced automatically.',
           ]}
         />
       </div>
     ),
   },
   {
-    id: 'analytics',
-    title: 'Reports & AI assistant',
-    summary: 'Analytics export, forecasting, and smart queries',
+    id: 'reports',
+    title: 'Reports',
+    summary: 'Summaries, date filters, and exports',
     content: (
       <div className="space-y-3">
         <p>
-          <GuideLink to="/reports">Reports</GuideLink> — summary stats, date filters, and CSV export of inventory.{' '}
-          Use the floating <strong>Smart Inventory Assistant</strong> button (bottom-right on every page) to ask
-          questions like “Which products will run out next week?” — demo mock responses only.
+          <GuideLink to="/reports">Reports</GuideLink> gives you summary numbers and downloadable data.
+          Filter orders by date range, search, and sort — then export inventory to a spreadsheet when needed.
         </p>
         <FeatureList
           items={[
-            'Dashboard KPIs (this page)',
-            'Inventory CSV export',
-            'Demand forecasting (/ai/forecast)',
-            'Dead stock & near-expiry insights',
-            'Natural-language inventory questions',
+            'Orders report with from / through date filters',
+            'Inventory overview with stock levels',
+            'Export data for sharing or offline analysis',
           ]}
         />
+      </div>
+    ),
+  },
+  {
+    id: 'assistant',
+    title: 'Smart assistant',
+    summary: 'Ask questions about your inventory',
+    content: (
+      <div className="space-y-3">
+        <p>
+          Use the floating <strong>Smart Inventory Assistant</strong> button at the bottom-right of any page.
+          Ask plain-language questions such as “Which products are low on stock?” or “What might run out soon?”
+        </p>
+        <p className="text-sm text-gray-500">
+          In this demo, answers are sample responses to show how the assistant would work in production.
+        </p>
       </div>
     ),
   },
   {
     id: 'notifications',
-    title: 'Notifications, email & activity logs',
-    summary: 'Alerts inbox, Resend email, audit trail',
+    title: 'Notifications & activity',
+    summary: 'Alerts and a record of what happened',
     content: (
       <div className="space-y-3">
         <p>
-          <GuideLink to="/notifications">Notifications</GuideLink> — low-stock alert inbox. Mark alerts as read. Admins
-          see email config and can send a <strong>test email</strong> (requires Resend API key in backend/.env).
+          <GuideLink to="/notifications">Notifications</GuideLink> collects low-stock and other alerts.
+          Mark items as read when you have handled them. Admins can also send a test email to verify delivery.
         </p>
         <p>
-          <GuideLink to="/activity-logs">Activity Logs</GuideLink> — who did what (logins, stock changes, approvals).
+          <GuideLink to="/activity-logs">Activity Logs</GuideLink> shows a history of important actions —
+          who signed in, changed stock, or approved an order.
         </p>
-        <StepList
-          steps={[
-            'Adjust stock below threshold → alert appears here and on Dashboard.',
-            'If Resend is configured, email goes to ALERT_EMAIL_RECIPIENTS.',
-            'Use “Send test email” on Notifications to verify delivery.',
-          ]}
-        />
       </div>
     ),
   },
   {
     id: 'workflows',
-    title: 'Recommended workflows',
-    summary: 'End-to-end paths to try in the demo',
+    title: 'Suggested daily workflows',
+    summary: 'Simple paths to try in the demo',
     content: (
       <div className="space-y-4">
         <div>
-          <p className="font-medium text-gray-800">Inventory manager daily flow</p>
+          <p className="font-medium text-gray-800">Manager</p>
           <StepList
             steps={[
-              'Dashboard → check Low Stock KPI and Recent Alerts.',
-              'Purchases → approve pending PO → receive stock.',
-              'Inventory → verify quantities updated.',
-              'Reports → export CSV if needed.',
+              'Check the Dashboard for low stock and pending orders.',
+              'Approve purchase orders, then confirm stock after receiving.',
+              'Review Reports for summaries or exports.',
             ]}
           />
         </div>
         <div>
-          <p className="font-medium text-gray-800">Warehouse staff flow</p>
+          <p className="font-medium text-gray-800">Warehouse team</p>
           <StepList
             steps={[
-              'Inventory → adjust stock or review levels.',
-              'Purchases → receive approved POs.',
-              'Sales → fulfill confirmed orders.',
-              'Warehouses → review transfers between locations.',
+              'Review Inventory levels and adjust if needed.',
+              'Receive approved purchase orders.',
+              'Fulfill confirmed sales orders.',
             ]}
           />
         </div>
         <div>
-          <p className="font-medium text-gray-800">Sales executive flow</p>
+          <p className="font-medium text-gray-800">Sales team</p>
           <StepList
             steps={[
-              'Listings → check product availability.',
-              'Sales → review and manage sales orders.',
-              'Floating assistant (bottom-right) → ask about stock or demand (mock demo).',
+              'Check Listings and Sales Channels for available products.',
+              'Manage sales orders and customer details.',
+              'Use the assistant for quick stock questions.',
             ]}
           />
         </div>
       </div>
-    ),
-  },
-  {
-    id: 'features',
-    title: 'Everything that is working',
-    summary: 'Full feature checklist for this platform',
-    content: (
-      <FeatureList
-        items={[
-          'JWT login with 5 role-based demo accounts',
-          'Product catalog with detail pages, categories, search',
-          'Inventory management with stock adjustments & thresholds',
-          'Multi-warehouse management & transfers',
-          'Suppliers & purchase orders (approve / receive)',
-          'Customers & sales orders (fulfill)',
-          'Legacy orders, payments, shipments',
-          'Low-stock alerts (in-app + Resend email when configured)',
-          'Dashboard KPIs and charts',
-          'Reports with CSV export',
-          'AI assistant, forecasting, dead-stock insights',
-          'Activity logs & login history',
-          'Batches, serials, inventory audits (API + seed data)',
-          'Import / export CSV for products & inventory',
-        ]}
-      />
     ),
   },
 ];
@@ -412,9 +385,9 @@ export function PlatformGuide() {
           <BookOpen className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-gray-800">Platform guide</h2>
+          <h2 className="text-base font-semibold text-gray-800">How to use Ventorio</h2>
           <p className="text-sm text-gray-500">
-            Expand each section to learn how Ventorio works and where to go next.
+            Plain-language help for every part of the app — no technical setup required.
           </p>
         </div>
       </div>
