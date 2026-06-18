@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" font-family="system-ui, sans-serif">
+  <rect width="640" height="400" fill="#f4f7f9"/>
+  <rect x="170" y="60" width="300" height="280" rx="12" fill="#fff" stroke="#e2e8f0"/>
+  <rect x="290" y="85" width="60" height="40" rx="8" fill="#234e7d"/>
+  <text x="320" y="140" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">Ventorio</text>
+  <text x="320" y="158" text-anchor="middle" font-size="11" fill="#64748b">Sign in to your account</text>
+  <rect x="260" y="168" width="80" height="18" rx="9" fill="#5bc0de"/>
+  <text x="300" y="181" text-anchor="middle" font-size="9" fill="#fff" font-weight="600">DEMO ENV</text>
+  <rect x="200" y="200" width="240" height="28" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="212" y="218" font-size="10" fill="#94a3b8">manager@inventory.com</text>
+  <rect x="200" y="240" width="240" height="28" rx="4" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="212" y="258" font-size="10" fill="#94a3b8">""""""""</text>
+  <rect x="200" y="280" width="240" height="32" rx="6" fill="#00aaff"/>
+  <text x="320" y="300" text-anchor="middle" font-size="12" fill="#fff" font-weight="600">Sign In</text>
+  <text x="320" y="330" text-anchor="middle" font-size="9" fill="#94a3b8">Demo accounts listed below</text>
+</svg>

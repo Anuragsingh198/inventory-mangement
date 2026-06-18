@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" font-family="system-ui, sans-serif">
+  <rect width="800" height="360" fill="#f4f7f9"/>
+  <rect x="0" y="0" width="160" height="360" fill="#234e7d"/>
+  <text x="20" y="120" font-size="10" fill="#5bc0de">Procurement</text>
+  <rect x="180" y="20" width="600" height="320" rx="8" fill="#fff" stroke="#e2e8f0"/>
+  <text x="200" y="50" font-size="14" font-weight="700" fill="#1e293b">Purchase Orders</text>
+  <rect x="200" y="65" width="560" height="28" fill="#f8fafc"/>
+  <text x="210" y="83" font-size="10" fill="#64748b" font-weight="600">PO #  Supplier        Status           Items  Actions</text>
+  <text x="210" y="110" font-size="10" fill="#334155">000001  Acme Corp       pending approval  3     View Approve</text>
+  <line x1="200" y1="118" x2="760" y2="118" stroke="#f1f5f9"/>
+  <text x="210" y="138" font-size="10" fill="#334155">000002  Global Supplies approved          3     View Receive</text>
+  <line x1="200" y1="146" x2="760" y2="146" stroke="#f1f5f9"/>
+  <text x="210" y="166" font-size="10" fill="#334155">000003  TechParts Inc   received          2     View</text>
+  <rect x="200" y="200" width="560" height="120" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-dasharray="4"/>
+  <text x="480" y="240" text-anchor="middle" font-size="11" fill="#64748b">Detail page: /purchases/:id</text>
+  <text x="480" y="260" text-anchor="middle" font-size="10" fill="#94a3b8">Line items · Approve · Receive stock</text>
+</svg>

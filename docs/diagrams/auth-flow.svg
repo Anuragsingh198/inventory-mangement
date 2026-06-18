@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+  <rect width="800" height="420" fill="#f4f7f9" rx="12"/>
+  <text x="400" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#234e7d">Authentication Flow</text>
+
+  <g>
+    <rect x="60" y="70" width="120" height="50" rx="8" fill="#fff" stroke="#cbd5e1"/>
+    <text x="120" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#334155">User</text>
+  </g>
+  <g>
+    <rect x="240" y="70" width="140" height="50" rx="8" fill="#fff" stroke="#00aaff"/>
+    <text x="310" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#234e7d">Login Page</text>
+  </g>
+  <g>
+    <rect x="440" y="70" width="140" height="50" rx="8" fill="#fff" stroke="#234e7d"/>
+    <text x="510" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#234e7d">FastAPI /auth</text>
+  </g>
+  <g>
+    <rect x="640" y="70" width="120" height="50" rx="8" fill="#fff" stroke="#5bc0de"/>
+    <text x="700" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#234e7d">Database</text>
+  </g>
+
+  <path d="M180 95 H240" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M380 95 H440" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M580 95 H640" stroke="#64748b" stroke-width="2" marker-end="url(#a)"/>
+
+  <text x="210" y="88" font-size="10" fill="#64748b">credentials</text>
+  <text x="400" y="88" font-size="10" fill="#64748b">POST /login</text>
+  <text x="600" y="88" font-size="10" fill="#64748b">verify user</text>
+
+  <rect x="100" y="160" width="600" height="220" rx="10" fill="#fff" stroke="#e2e8f0"/>
+  <text x="400" y="188" text-anchor="middle" font-size="13" font-weight="700" fill="#234e7d">Protected route access</text>
+
+  <circle cx="140" cy="240" r="28" fill="#5bc0de" opacity="0.2"/>
+  <text x="140" y="245" text-anchor="middle" font-size="11" font-weight="600" fill="#234e7d">1</text>
+  <text x="200" y="238" font-size="11" fill="#334155">User visits protected page</text>
+  <text x="200" y="254" font-size="10" fill="#64748b">Router checks AuthContext</text>
+
+  <circle cx="140" cy="295" r="28" fill="#00aaff" opacity="0.2"/>
+  <text x="140" y="300" text-anchor="middle" font-size="11" font-weight="600" fill="#234e7d">2</text>
+  <text x="200" y="293" font-size="11" fill="#334155">Axios attaches Bearer JWT</text>
+  <text x="200" y="309" font-size="10" fill="#64748b">Authorization header on every API call</text>
+
+  <circle cx="140" cy="350" r="28" fill="#f0ad4e" opacity="0.25"/>
+  <text x="140" y="355" text-anchor="middle" font-size="11" font-weight="600" fill="#234e7d">3</text>
+  <text x="200" y="348" font-size="11" fill="#334155">FastAPI validates token + role</text>
+  <text x="200" y="364" font-size="10" fill="#64748b">admin = write · viewer = read-only</text>
+
+  <rect x="480" y="220" width="180" height="130" rx="8" fill="#234e7d" opacity="0.06" stroke="#234e7d"/>
+  <text x="570" y="248" text-anchor="middle" font-size="11" font-weight="700" fill="#234e7d">Roles</text>
+  <text x="500" y="275" font-size="11" fill="#334155">=á admin  full CRUD</text>
+  <text x="500" y="300" font-size="11" fill="#334155">=A viewer  read only</text>
+  <text x="500" y="330" font-size="10" fill="#64748b">Enforced in API + UI</text>
+
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+</svg>

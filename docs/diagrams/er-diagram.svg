@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+  <rect width="900" height="420" fill="#f4f7f9" rx="12"/>
+  <text x="450" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#234e7d">Entity Relationship Diagram</text>
+
+  <g>
+    <rect x="60" y="60" width="140" height="70" rx="8" fill="#234e7d"/>
+    <text x="130" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">users</text>
+    <text x="130" y="110" text-anchor="middle" font-size="10" fill="#b3d4f0">role · email</text>
+  </g>
+
+  <g>
+    <rect x="60" y="200" width="140" height="70" rx="8" fill="#fff" stroke="#00aaff" stroke-width="2"/>
+    <text x="130" y="230" text-anchor="middle" font-size="13" font-weight="700" fill="#234e7d">categories</text>
+    <text x="130" y="250" text-anchor="middle" font-size="10" fill="#64748b">name · description</text>
+  </g>
+
+  <path d="M130 270 V310 H280 V270" fill="none" stroke="#64748b" stroke-width="2"/>
+  <text x="200" y="295" font-size="10" fill="#64748b">1:N</text>
+
+  <g>
+    <rect x="220" y="310" width="160" height="80" rx="8" fill="#fff" stroke="#234e7d" stroke-width="2"/>
+    <text x="300" y="340" text-anchor="middle" font-size="13" font-weight="700" fill="#234e7d">products</text>
+    <text x="300" y="360" text-anchor="middle" font-size="10" fill="#64748b">sku · price · category_id</text>
+    <text x="300" y="376" text-anchor="middle" font-size="10" fill="#64748b">image_url</text>
+  </g>
+
+  <path d="M380 350 H430" stroke="#00aaff" stroke-width="2" marker-end="url(#e)"/>
+  <text x="405" y="342" font-size="10" fill="#00aaff">1:1</text>
+
+  <g>
+    <rect x="430" y="310" width="160" height="80" rx="8" fill="#fff" stroke="#5bc0de" stroke-width="2"/>
+    <text x="510" y="340" text-anchor="middle" font-size="13" font-weight="700" fill="#234e7d">inventory</text>
+    <text x="510" y="360" text-anchor="middle" font-size="10" fill="#64748b">quantity · min_threshold</text>
+    <text x="510" y="376" text-anchor="middle" font-size="10" fill="#64748b">location</text>
+  </g>
+
+  <path d="M300 310 V260 H510 V310" fill="none" stroke="#f0ad4e" stroke-width="2"/>
+  <text x="420" y="252" font-size="10" fill="#f0ad4e">1:N alerts</text>
+
+  <g>
+    <rect x="430" y="170" width="160" height="70" rx="8" fill="#fef3c7" stroke="#f0ad4e" stroke-width="2"/>
+    <text x="510" y="200" text-anchor="middle" font-size="13" font-weight="700" fill="#b45309">alerts</text>
+    <text x="510" y="220" text-anchor="middle" font-size="10" fill="#64748b">type · message · is_read</text>
+  </g>
+
+  <g>
+    <rect x="650" y="60" width="140" height="70" rx="8" fill="#fff" stroke="#234e7d" stroke-width="2"/>
+    <text x="720" y="90" text-anchor="middle" font-size="13" font-weight="700" fill="#234e7d">orders</text>
+    <text x="720" y="110" text-anchor="middle" font-size="10" fill="#64748b">supplier · status</text>
+  </g>
+
+  <path d="M720 130 V200 H720 V230 H380" fill="none" stroke="#64748b" stroke-width="2"/>
+  <text x="560" y="218" font-size="10" fill="#64748b">1:N order_items · N:1 products</text>
+
+  <g>
+    <rect x="650" y="230" width="160" height="80" rx="8" fill="#fff" stroke="#10b981" stroke-width="2"/>
+    <text x="730" y="260" text-anchor="middle" font-size="13" font-weight="700" fill="#047857">order_items</text>
+    <text x="730" y="280" text-anchor="middle" font-size="10" fill="#64748b">quantity · unit_price</text>
+    <text x="730" y="296" text-anchor="middle" font-size="10" fill="#64748b">order_id · product_id</text>
+  </g>
+
+  <defs>
+    <marker id="e" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#00aaff"/>
+    </marker>
+  </defs>
+</svg>

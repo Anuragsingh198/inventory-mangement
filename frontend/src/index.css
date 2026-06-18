@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #00aaff;
+  --color-brand-dark: #0090d9;
+  --color-sidebar: #234e7d;
+  --color-sidebar-dark: #1a3d63;
+  --color-sidebar-hover: #2d5f94;
+  --color-surface: #f4f7f9;
+  --color-mint: #5bc0de;
+  --color-mint-dark: #46b8da;
+  --color-accent-amber: #f0ad4e;
+}
+
+body {
+  @apply bg-surface text-gray-800 antialiased;
+}
+
+/* Table row hover indicator like reference UI */
+.table-row-hover tbody tr {
+  @apply relative transition-colors;
+}
+.table-row-hover tbody tr:hover {
+  @apply bg-sky-50/40;
+  box-shadow: inset 4px 0 0 var(--color-accent-amber);
+}

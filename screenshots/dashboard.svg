@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="system-ui, sans-serif">
+  <rect width="800" height="420" fill="#f4f7f9"/>
+  <rect x="0" y="0" width="160" height="420" fill="#234e7d"/>
+  <text x="20" y="40" font-size="12" fill="#fff" font-weight="700">Ventorio</text>
+  <text x="20" y="80" font-size="10" fill="#b3d4f0">Dashboard</text>
+  <text x="20" y="100" font-size="10" fill="#e2e8f0">Listings</text>
+  <text x="20" y="120" font-size="10" fill="#e2e8f0">Inventory</text>
+  <text x="20" y="140" font-size="10" fill="#e2e8f0">Procurement</text>
+  <rect x="180" y="16" width="600" height="40" rx="6" fill="#fff" stroke="#e2e8f0"/>
+  <text x="200" y="40" font-size="11" fill="#64748b">Dashboard Overview</text>
+  <g>
+    <rect x="180" y="70" width="135" height="70" rx="8" fill="#fff" stroke="#e2e8f0"/>
+    <text x="195" y="95" font-size="10" fill="#64748b">Total Products</text>
+    <text x="195" y="120" font-size="18" font-weight="700" fill="#234e7d">20</text>
+  </g>
+  <g>
+    <rect x="330" y="70" width="135" height="70" rx="8" fill="#fff" stroke="#e2e8f0"/>
+    <text x="345" y="95" font-size="10" fill="#64748b">Stock Value</text>
+    <text x="345" y="120" font-size="18" font-weight="700" fill="#234e7d">$12.4k</text>
+  </g>
+  <g>
+    <rect x="480" y="70" width="135" height="70" rx="8" fill="#fff" stroke="#e2e8f0"/>
+    <text x="495" y="95" font-size="10" fill="#64748b">Low Stock</text>
+    <text x="495" y="120" font-size="18" font-weight="700" fill="#ef4444">3</text>
+  </g>
+  <g>
+    <rect x="630" y="70" width="135" height="70" rx="8" fill="#fff" stroke="#e2e8f0"/>
+    <text x="645" y="95" font-size="10" fill="#64748b">Pending POs</text>
+    <text x="645" y="120" font-size="18" font-weight="700" fill="#234e7d">2</text>
+  </g>
+  <rect x="180" y="160" width="380" height="160" rx="8" fill="#fff" stroke="#e2e8f0"/>
+  <text x="200" y="185" font-size="11" font-weight="600" fill="#334155">Revenue trend</text>
+  <polyline points="200,290 250,260 300,270 350,220 400,230 450,200 500,210 550,180" fill="none" stroke="#00aaff" stroke-width="2"/>
+  <rect x="580" y="160" width="200" height="160" rx="8" fill="#fff" stroke="#e2e8f0"/>
+  <text x="600" y="185" font-size="11" font-weight="600" fill="#334155">Top products</text>
+  <rect x="600" y="200" width="160" height="8" rx="4" fill="#e2e8f0"/><rect x="600" y="200" width="120" height="8" rx="4" fill="#5bc0de"/>
+  <rect x="600" y="220" width="160" height="8" rx="4" fill="#e2e8f0"/><rect x="600" y="220" width="90" height="8" rx="4" fill="#5bc0de"/>
+  <rect x="600" y="240" width="160" height="8" rx="4" fill="#e2e8f0"/><rect x="600" y="240" width="70" height="8" rx="4" fill="#5bc0de"/>
+</svg>
