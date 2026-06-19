@@ -15,9 +15,6 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ./backend/.env
-    environment:
-      # Same keys as backend/.env.example — override CORS for your public URL if needed
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
     expose:
       - "8000"
     restart: unless-stopped

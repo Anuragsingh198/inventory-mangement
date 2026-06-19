@@ -12,10 +12,10 @@ RUN npm ci
 
 COPY . .
 
-# VITE_* vars are baked in at build time.
-# Leave empty in production so the browser calls the same host (nginx proxies /auth, /products, etc.)
-ARG VITE_API_URL=
-ENV VITE_API_URL=$VITE_API_URL
+# Production builds use same-origin API URLs (see src/api/client.ts).
+# Override only if API is on a different host: --build-arg VITE_API_URL=https://api.example.com
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
 
 RUN npm run build
 

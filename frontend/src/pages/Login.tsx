@@ -108,7 +108,9 @@ function DemoRoleButton({
 function loginErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     if (!error.response) {
-      return 'Cannot reach the server. Start the backend on port 8000 (./run.sh in backend/).';
+      return import.meta.env.DEV
+        ? 'Cannot reach the server. Start the backend on port 8000 (./run.sh in backend/).'
+        : 'Cannot reach the API. Check that the server is running and try again.';
     }
     if (error.response.status === 401) {
       return 'Incorrect email or password.';
