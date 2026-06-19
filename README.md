@@ -14,13 +14,19 @@ React · TypeScript · FastAPI · PostgreSQL · Resend
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?logo=postgresql&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?logo=tailwindcss&logoColor=white)
 
-[Features](#features) · [List views](#list-views-search-sort--pagination) · [Flows](#application-flows) · [Getting Started](#getting-started) · [API](#api-reference) · [Schema](#database-schema)
+[Demo](#demo) · [Features](#features) · [List views](#list-views-search-sort--pagination) · [Flows](#application-flows) · [Getting Started](#getting-started) · [API](#api-reference) · [Schema](#database-schema)
 
 </div>
 
 ---
 
 Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procurement**, **sales orders**, **audits**, **forecasting**, and **reporting** in one dashboard — with **role-based access** so each team member sees only what they need.
+
+## Demo
+
+<div align="center">
+  <img src="doc/demo.gif" alt="Ventorio demo walkthrough" width="900"/>
+</div>
 
 | | |
 |---|---|
@@ -34,6 +40,7 @@ Ventorio centralizes **product catalog**, **multi-warehouse stock**, **procureme
 
 ## Table of Contents
 
+- [Demo](#demo)
 - [Features](#features)
 - [List views: search, sort & pagination](#list-views-search-sort--pagination)
 - [Tech Stack](#tech-stack)
@@ -605,6 +612,8 @@ Migrations: `alembic/versions/001_initial.py` → `002_enterprise_features.py`
 ```
 inventory/
 ├── README.md
+├── doc/
+│   └── demo.gif               # App walkthrough demo
 ├── backend/
 │   ├── alembic/versions/      # 001_initial, 002_enterprise_features
 │   ├── app/

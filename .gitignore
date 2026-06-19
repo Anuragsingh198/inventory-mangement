@@ -19,6 +19,7 @@ frontend/.env
 backend/.env.local
 frontend/.env.local
 deploy/aws.env.local
+deploy/dockerhub.env.local
 
 # Python / backend
 backend/venv/
