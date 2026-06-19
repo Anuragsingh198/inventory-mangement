@@ -18,6 +18,7 @@ backend/.env
 frontend/.env
 backend/.env.local
 frontend/.env.local
+deploy/aws.env.local
 
 # Python / backend
 backend/venv/

@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// undefined = local dev default; empty string = production (nginx proxies API on same host)
+const configuredApiUrl = import.meta.env.VITE_API_URL;
+const API_URL =
+  configuredApiUrl === undefined ? 'http://localhost:8000' : configuredApiUrl;
 
 export const apiClient = axios.create({
   baseURL: API_URL,

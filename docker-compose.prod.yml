@@ -1,0 +1,45 @@
+# Production compose for EC2 — backend + frontend only.
+# PostgreSQL is external: set DATABASE_URL in backend/.env (same format as .env.example).
+#
+# Public access: open EC2 security group port 80, then visit http://<EC2_PUBLIC_IP>
+#
+# ECR images (after push):
+#   export BACKEND_IMAGE=123456789012.dkr.ecr.us-east-1.amazonaws.com/inventory-backend:latest
+#   export FRONTEND_IMAGE=123456789012.dkr.ecr.us-east-1.amazonaws.com/inventory-frontend:latest
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-inventory-backend:latest}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      # Same keys as backend/.env.example — override CORS for your public URL if needed
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+    expose:
+      - "8000"
+    restart: unless-stopped
+    networks:
+      - app
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-inventory-frontend:latest}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app
+
+networks:
+  app:
+    driver: bridge

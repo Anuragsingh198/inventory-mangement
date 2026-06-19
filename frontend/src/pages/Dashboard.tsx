@@ -237,7 +237,7 @@ export function DashboardPage() {
               <XAxis type="number" hide />
               <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={false} tickLine={false} />
               <Tooltip
-                formatter={(v: number) => [formatCurrency(v), 'Value']}
+                formatter={(v) => [formatCurrency(Number(v ?? 0)), 'Value']}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ''}
                 contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
               />
@@ -493,7 +493,7 @@ export function DashboardPage() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-base font-semibold text-gray-900">Recent alerts</h2>
             {(alerts?.length ?? 0) > 0 ? (
-              <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-bold text-white">{alerts.length}</span>
+              <span className="rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-bold text-white">{alerts?.length ?? 0}</span>
             ) : (
               <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">Clear</span>
             )}
