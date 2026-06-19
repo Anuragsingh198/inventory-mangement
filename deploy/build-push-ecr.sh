@@ -29,6 +29,8 @@ ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 BACKEND_REPO="${BACKEND_REPO:-inventory-backend}"
 FRONTEND_REPO="${FRONTEND_REPO:-inventory-frontend}"
 TAG="${TAG:-latest}"
+# EC2 (x86) needs amd64 — Mac Apple Silicon builds arm64 by default
+DOCKER_PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 
 echo "Logging in to ECR (${ECR_REGISTRY})..."
 "$AWS" ecr get-login-password --region "$AWS_REGION" \
@@ -39,11 +41,12 @@ for REPO in "$BACKEND_REPO" "$FRONTEND_REPO"; do
     || "$AWS" ecr create-repository --repository-name "$REPO" --region "$AWS_REGION"
 done
 
-echo "Building backend..."
-docker build -t "${ECR_REGISTRY}/${BACKEND_REPO}:${TAG}" "${ROOT}/backend"
+echo "Building backend for ${DOCKER_PLATFORM}..."
+docker build --platform "${DOCKER_PLATFORM}" \
+  -t "${ECR_REGISTRY}/${BACKEND_REPO}:${TAG}" "${ROOT}/backend"
 
-echo "Building frontend..."
-docker build \
+echo "Building frontend for ${DOCKER_PLATFORM}..."
+docker build --platform "${DOCKER_PLATFORM}" \
   --build-arg VITE_API_URL="" \
   -t "${ECR_REGISTRY}/${FRONTEND_REPO}:${TAG}" \
   "${ROOT}/frontend"
