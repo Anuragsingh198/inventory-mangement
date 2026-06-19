@@ -4,15 +4,16 @@
 # Prerequisites on EC2:
 #   - IAM role with AmazonEC2ContainerRegistryReadOnly
 #   - docker + docker compose installed
-#   - ~/inventory/docker-compose.prod.yml
-#   - ~/inventory/backend/.env  (DATABASE_URL, SECRET_KEY, etc.)
+#   - docker-compose.prod.yml in project root
+#   - backend/.env  (DATABASE_URL, SECRET_KEY, etc.)
 #
 # Optional: set region/account here or export before running.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 AWS_ACCOUNT_ID="${AWS_ACCOUNT_ID:?Set AWS_ACCOUNT_ID (your 12-digit account id)}"
-APP_DIR="${APP_DIR:-$HOME/inventory}"
+APP_DIR="${APP_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 
 BACKEND_REPO="${BACKEND_REPO:-inventory-backend}"
 FRONTEND_REPO="${FRONTEND_REPO:-inventory-frontend}"
